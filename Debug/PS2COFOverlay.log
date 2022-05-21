@@ -1,0 +1,6 @@
+﻿  PS2COFOverlay.cpp
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\PS2COFOverlay.cpp(371,39): warning C4244: 'argument': conversion from 'double' to 'DWORD', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\PS2COFOverlay.cpp(239): warning C4715: 'IsCrouching': not all control paths return a value
+PS2COFOverlay.obj : error LNK2019: unresolved external symbol __imp__PathCchRemoveFileSpec@8 referenced in function "class std::basic_string<wchar_t,struct std::char_traits<wchar_t>,class std::allocator<wchar_t> > __cdecl GetBasePath(wchar_t *)" (?GetBasePath@@YA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@PA_W@Z)
+PS2COFOverlay.obj : error LNK2019: unresolved external symbol __imp__PathCchAppend@12 referenced in function "class std::basic_string<wchar_t,struct std::char_traits<wchar_t>,class std::allocator<wchar_t> > __cdecl GetBasePath(wchar_t *)" (?GetBasePath@@YA?AV?$basic_string@_WU?$char_traits@_W@std@@V?$allocator@_W@2@@std@@PA_W@Z)
+C:\Users\ColRem\source\repos\PS2COFOverlay\Debug\PS2COFOverlay.exe : fatal error LNK1120: 2 unresolved externals
