@@ -48,13 +48,19 @@ void Paint::DrawCrosshairs(int cS, int pL, int pW, D3DCOLOR Color)
 	int CW = Width / 2;//centre width
 	int CH = Height / 2;//centre height
 
-	//debug
-	DrawLine(CW, CH, 1, 1, Color);//center debug
+	int pWHalf = pW / 2;//half width (for subtraction from position)
+	int pLHalf = pL / 2;//half width (for subtraction from position)
 
-	DrawLine(CW+cS+pL, CH, pW, pL, Color);//right
-	DrawLine(CW-cS-pL*2, CH, pW, pL, Color);//Left
-	DrawLine(CW, CH + cS + pL, pL, pW, Color);//top
-	DrawLine(CW, CH - cS - pL * 2, pL, pW, Color);//bot
+	if (bDrawCenterDot)
+	{
+		DrawLine(CW - 1, CH - 1, 2, 2, Color);//center debug dot
+	}
+
+	DrawLine(CW + cS, CH - pWHalf, pW, pL, Color);//right
+	DrawLine(CW - cS - pL, CH - pWHalf, pW, pL, Color);//Left
+
+	DrawLine(CW - pWHalf, CH + cS, pL, pW, Color);//top
+	DrawLine(CW - pWHalf, CH - cS - pL, pL, pW, Color);//bot
 }
 
 void Paint::Start()
@@ -73,7 +79,8 @@ void Paint::Render(float CurrentCOF, char* test)
 {
 	//if (TargetHWND == GetForegroundWindow())
 	{
-		DrawCrosshairs(CurrentCOF, 10, 5, D3DCOLOR_ARGB(255,255,0,0));
+		//TODO: make width and shit configurable
+		DrawCrosshairs(CurrentCOF, PipLength, PipWidth, CrosshairColor);
 		if (test)
 		{
 			PDrawText(test, Width / 2, Height / 2, 255, 255, 255, 127);

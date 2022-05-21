@@ -1,0 +1,13 @@
+﻿  PS2COFOverlay.cpp
+  WeaponConfig.cpp
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\WeaponConfig.cpp(112,58): warning C4244: 'argument': conversion from 'double' to 'ValueType', possible loss of data
+          with
+          [
+              ValueType=float
+          ]
+  Generating code
+  0 of 1211 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  PS2COFOverlay.vcxproj -> C:\Users\ColRem\source\repos\PS2COFOverlay\Release\PS2COFOverlay.exe

@@ -82,13 +82,17 @@
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(DXSDK_DIR)Lib\x86;</LibraryPath>
     <PublicIncludeDirectories>$(MSBuildProjectDirectory)\ImGui\;$(MSBuildProjectDirectory)\ImGui\Backends\</PublicIncludeDirectories>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(DXSDK_DIR)Include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(DXSDK_DIR)Lib\x86;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(DXSDK_DIR)Include;$(ProjectDir)imgui;$(ProjectDir)backends;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DXSDK_DIR)Include;$(ProjectDir)imgui;$(ProjectDir)backends;pathcch.h;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -151,6 +155,48 @@
     <ClInclude Include="Ext\imgui\imstb_rectpack.h" />
     <ClInclude Include="Ext\imgui\imstb_textedit.h" />
     <ClInclude Include="Ext\imgui\imstb_truetype.h" />
+    <ClInclude Include="Ext\Json\include\nlohmann\adl_serializer.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\byte_container_with_subtype.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\conversions\from_json.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\conversions\to_chars.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\conversions\to_json.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\exceptions.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\hash.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\input\binary_reader.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\input\input_adapters.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\input\json_sax.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\input\lexer.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\input\parser.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\input\position_t.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\iterators\internal_iterator.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\iterators\iteration_proxy.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\iterators\iterator_traits.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\iterators\iter_impl.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\iterators\json_reverse_iterator.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\iterators\primitive_iterator.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\json_pointer.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\json_ref.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\macro_scope.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\macro_unscope.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\meta\call_std\begin.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\meta\call_std\end.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\meta\cpp_future.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\meta\detected.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\meta\identity_tag.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\meta\is_sax.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\meta\type_traits.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\meta\void_t.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\output\binary_writer.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\output\output_adapters.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\output\serializer.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\string_escape.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\detail\value_t.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\json.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\json_fwd.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\ordered_map.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\thirdparty\hedley\hedley.hpp" />
+    <ClInclude Include="Ext\Json\include\nlohmann\thirdparty\hedley\hedley_undef.hpp" />
+    <ClInclude Include="Ext\Json\json.hpp" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="PS2COFOverlay.h" />
     <ClInclude Include="Resource.h" />

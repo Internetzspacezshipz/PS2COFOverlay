@@ -4,8 +4,8 @@
 
 //Base incl
 #include "framework.h"
-#include <ctime>
 #include <string>
+#include <ctime>
 
 #include <pathcch.h>
 
@@ -24,8 +24,7 @@
 #include "Source/Paint.h"
 #include "Source/WeaponConfig.h"
 
-
-
+#if 0
 //Copied from StackOverflow ofc. https://stackoverflow.com/questions/18783087/how-to-properly-use-getmodulefilename
 template <typename TChar, typename TStringGetterFunc>
 std::basic_string<TChar> GetStringFromWindowsApi(TStringGetterFunc stringGetter, int initialSize = 0)
@@ -69,6 +68,7 @@ std::wstring GetBasePath(WCHAR* GetTarget)
 	const WCHAR* dllPath = &ModuleName[0];
 	return ModuleName;
 }
+#endif
 
 struct IDirect3DDevice9Ex;
 
@@ -84,7 +84,6 @@ Paint* PaintObject = nullptr;
 //TODO: put player settings in a separate place
 float FOV = 74.f;
 bool bToggleCrouch = true;
-float AngleToPixel;
 
 bool bMenuOpen = false;
 
@@ -161,6 +160,10 @@ void InitGUI(IDirect3DDevice9Ex* Device, HWND* TargetHWND)
 
 
 
+//Current state
+float CurrentCOF_ZoomAdjusted = 0.f;
+bool PressedMoveKeys[4];
+
 WeaponConfigState CurrentState;
 
 //primary weapon
@@ -170,16 +173,6 @@ WeaponConfig Config2;
 //tert weapon (rocket launcher, etc)
 WeaponConfig Config3;
 
-//Loads configs from JSON
-void LoadConfigs()
-{
-	//TODO: code
-}
-
-//Current state
-float CurrentCOF_ZoomAdjusted = 0.f;
-clock_t LastFire = 0;
-bool PressedMoveKeys[4];
 
 /* from WinUser.h L#532
  * VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
@@ -245,17 +238,17 @@ bool MaybeSwitchWeapon()
 	if (GetAsyncKeyState(0x31))//1 key
 	{
 		bSwitchOccurred = true;
-		CurrentConfig = &Config1;
+		CurrentState.Config = &Config1;
 	}
 	else if (GetAsyncKeyState(0x32))//2 key
 	{
 		bSwitchOccurred = true;
-		CurrentConfig = &Config2;
+		CurrentState.Config = &Config2;
 	}
 	else if (GetAsyncKeyState(0x33))//3 key
 	{
 		bSwitchOccurred = true;
-		CurrentConfig = &Config3;
+		CurrentState.Config = &Config3;
 	}
 
 	return bSwitchOccurred;
@@ -309,72 +302,40 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	SetWindowPos(overlayHWND, HWND_TOPMOST, 0, 0, width, height, 0);
 
+	clock_t LastTick = 0;
+
+	CurrentState.Config = &Config1;
+
     // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
+		//Setup time
+		clock_t Now = clock();
+		const float DeltaTime = ((float)(Now - LastTick)) / CLOCKS_PER_SEC;
+		LastTick = Now;
+
 		//do weapon switch if it's needed.
 		MaybeSwitchWeapon();
 
 		//todo: add quit button
-		if (CurrentConfig)
-		{
-			clock_t Now = clock();
 
-			const bool bMoving = IsMoving();
-			const bool bFiring = GetAsyncKeyState(0x01);//LMB
-			const bool bIsADSed = GetAsyncKeyState(0x02);//RMB
-			//const bool bIsSprinting = GetAsyncKeyState(VK_SHIFT);//sprint doesn't really matter rn
-			const bool bIsCrouched = IsCrouching();//crouch
+		const bool bMoving = IsMoving();
+		const bool bFiring = GetAsyncKeyState(0x01);//LMB
+		const bool bIsADSed = GetAsyncKeyState(0x02);//RMB
+		const bool bIsReloadPressed = GetAsyncKeyState(0x52) || GetAsyncKeyState(0x72); //R/r
+		const bool bIsCrouched = IsCrouching();//crouch
+		//const bool bIsSprinting = GetAsyncKeyState(VK_SHIFT);//sprint doesn't really matter rn
 
-			//Calc angle to pixel value.
-			if (bIsADSed)
-			{
-				AngleToPixel = height / (FOV / CurrentConfig->OpticZoom);
-			}
-			else
-			{
-				AngleToPixel = height / FOV;
-			}
+		const float CurrentZoom = CurrentState.Tick(DeltaTime, bFiring, bMoving, bIsCrouched, bIsADSed, bIsReloadPressed);
 
-			//Add COF if firing.
-			if (bFiring)
-			{
-				if (bIsADSed)
-				{
-					CurrentCOF += CurrentConfig->ADSBloom;
-				}
-				else
-				{
-					CurrentCOF += CurrentConfig->HipBloom;
-				}
+		//Simple conversion from angle to pixel size. Should be set in tick
+		const float AngleToPixel = height / (FOV / CurrentZoom);
 
-				LastFire = Now;
-			}
+		//Max cone
+		CurrentCOF_ZoomAdjusted = CurrentState.CurrentCOF * AngleToPixel;
 
-			if ((Now - LastFire) > CurrentConfig->BloomResetDelay)
-			{
-				CurrentCOF -= CurrentConfig->BloomReset;
-				//Min cone
-				CurrentCOF = fmaxf(CurrentCOF, CurrentConfig->GetMinConeForState(bMoving, bIsCrouched, bIsADSed));
-			}
-
-			//Max cone
-			CurrentCOF = fminf(CurrentCOF, CurrentConfig->GetMaxConeForState(bMoving, bIsCrouched, bIsADSed));
-
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-
-			//refire time.
-			if (bFiring)
-			{
-				Sleep(CurrentConfig->GetRefireTime());
-			}
-		}
-		else
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
     }
 
 	ImGui_ImplDX9_Shutdown();
@@ -475,7 +436,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			ImGui::Text("WHATEVER TEST SHIT THIS IS");
 
 			//RENDER CROSSHARI
-            PaintObject->Render(CurrentCOF * AngleToPixel, nullptr/*(char*)&calls*/);
+            PaintObject->Render(CurrentCOF_ZoomAdjusted, nullptr/*(char*)&calls*/);
 
 			ImGui::End();
 			ImGui::Render();
