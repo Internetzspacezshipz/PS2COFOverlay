@@ -7,8 +7,6 @@
 #include <string>
 #include <ctime>
 
-#include <pathcch.h>
-
 //Disable warnings for uninitialized variables
 #pragma warning(disable: 26495)
 
@@ -19,56 +17,16 @@
 
 #pragma warning(default: 26495)
 
+//Boost
+#include "boost_1_79_0\boost\filesystem.hpp"
+
 //proj includes
 #include "PS2COFOverlay.h"
 #include "Source/Paint.h"
 #include "Source/WeaponConfig.h"
 
-#if 0
-//Copied from StackOverflow ofc. https://stackoverflow.com/questions/18783087/how-to-properly-use-getmodulefilename
-template <typename TChar, typename TStringGetterFunc>
-std::basic_string<TChar> GetStringFromWindowsApi(TStringGetterFunc stringGetter, int initialSize = 0)
-{
-	if (initialSize <= 0)
-	{
-		initialSize = MAX_PATH;
-	}
-
-	std::basic_string<TChar> result(initialSize, 0);
-	for (;;)
-	{
-		auto length = stringGetter(&result[0], result.length());
-		if (length == 0)
-		{
-			return std::basic_string<TChar>();
-		}
-
-		if (length < result.length() - 1)
-		{
-			result.resize(length);
-			result.shrink_to_fit();
-			return result;
-		}
-
-		result.resize(result.length() * 2);
-	}
-}
-
-std::wstring GetBasePath(WCHAR* GetTarget)
-{
-	//Get our own process path.
-	std::wstring ModuleName = std::wstring(GetStringFromWindowsApi<WCHAR>([](WCHAR* Buffer, int Size)
-	{
-		return GetModuleFileNameW(NULL, Buffer, Size);
-	}, MAX_PATH));
-
-	PathCchRemoveFileSpec(&ModuleName[0], ModuleName.length());
-	PathCchAppend(&ModuleName[0], ModuleName.capacity(), GetTarget);
-
-	const WCHAR* dllPath = &ModuleName[0];
-	return ModuleName;
-}
-#endif
+//Test boost
+boost::filesystem::path Path;
 
 struct IDirect3DDevice9Ex;
 
