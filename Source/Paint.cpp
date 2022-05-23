@@ -79,7 +79,7 @@ void Paint::Render(float CurrentCOF, char* test)
 {
 	//if (TargetHWND == GetForegroundWindow())
 	{
-		//TODO: make width and shit configurable
+		//todo: add range gradiation system
 		DrawCrosshairs(CurrentCOF, PipLength, PipWidth, CrosshairColor);
 		if (test)
 		{

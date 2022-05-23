@@ -289,7 +289,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	GetDesktopResolution(width, height);
 
     // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
+    if (!InitInstance(hInstance, nCmdShow))
     {
         return FALSE;
     }
@@ -304,6 +304,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	clock_t LastTick = 0;
 
+	//todo: load configs
+
 	CurrentState.Config = &Config1;
 
     // Main message loop:
@@ -315,6 +317,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		LastTick = Now;
 
 		//do weapon switch if it's needed.
+		//todo: add support for combination weapons (UBGLs/UBSGs/etc)
+		//todo: add support for special abilities altering currently equipped weapon.
+		//todo: add support for equip times.
 		MaybeSwitchWeapon();
 
 		//todo: add quit button
@@ -388,8 +393,19 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
-   overlayHWND = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED, Title, Title, WS_POPUP,
-      1, 1, width, height, nullptr, nullptr, hInstance, nullptr);
+   overlayHWND = CreateWindowExW(
+	   WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED,
+	   Title,
+	   Title,
+	   WS_POPUP,
+		1,
+		1,
+	   width,
+	   height,
+	   nullptr,
+	   nullptr,
+	   hInstance,
+	   nullptr);
 
    if (!overlayHWND)
    {

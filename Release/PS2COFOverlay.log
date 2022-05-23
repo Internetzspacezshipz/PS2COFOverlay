@@ -1,4 +1,11 @@
 ﻿  PS2COFOverlay.cpp
+  Paint.cpp
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(41,43): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(41,39): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(41,65): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(41,59): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(42,17): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(83,18): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
   WeaponConfig.cpp
 C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\WeaponConfig.cpp(112,58): warning C4244: 'argument': conversion from 'double' to 'ValueType', possible loss of data
           with
@@ -6,8 +13,7 @@ C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\WeaponConfig.cpp
               ValueType=float
           ]
   Generating code
-  0 of 1211 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+  Previous IPDB and IOBJ mismatch, fall back to full compilation.
+  All 1212 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
   Finished generating code
   PS2COFOverlay.vcxproj -> C:\Users\ColRem\source\repos\PS2COFOverlay\Release\PS2COFOverlay.exe

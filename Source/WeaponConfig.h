@@ -31,8 +31,41 @@ struct WeaponConeConfig
 	{}
 };
 
+struct RangeGradiationConfig
+{
+	//Whether we should use this gradiation in the UI
+	bool bUseGradiation;
+
+	//The scale of the gradiation marks
+	float Scale;
+
+	//The linearity of the gradiation marks
+	float Linearity;
+
+	//The number of marks on the gradiation scale
+	int NumMarks;
+	//Number of marks that we should not show (eg. for short distances)
+	int NumInvisibleMarks;
+
+	//The distance displayed on each of the gradiation marks.
+	int MarkDistanceInterval;
+
+
+	RangeGradiationConfig() :
+		bUseGradiation(false),
+		Scale(0.f),
+		Linearity(0.f),
+		NumMarks(0),
+		NumInvisibleMarks(0),
+		MarkDistanceInterval(0)
+	{
+	}
+};
+
 struct WeaponFireModeConfig
 {
+	RangeGradiationConfig RangeGradiation;
+
 	//Default ADS seems to be 1.35
 	//Default hip is 1
 	float Zoom;
@@ -84,10 +117,10 @@ struct WeaponConfig
 	//Number of bullets the magazine holds.
 	int MagSize;
 
-	//Short reload (tactical reload)
+	//Short reload (tactical reload) in seconds
 	float ReloadTimeShort;
 
-	//Long reload (empty magazine reload)
+	//Long reload (empty magazine reload) in seconds
 	float ReloadTimeLong;
 
 	//Gets the inner configuration of the current fire mode based on whether we're adsing or not.
