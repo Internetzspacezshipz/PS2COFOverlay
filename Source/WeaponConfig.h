@@ -1,10 +1,13 @@
 #pragma once
 
 //JSON INCL
-#include "..\Ext\Json\json.hpp"
+#include "../Ext/Json/json.hpp"
+#include "DataLoader.h"
+#include "../Ext/boost_1_79_0/boost/scoped_array.hpp"
 
 //https://liquidwarp.honu.pw/stats/weapons/infantry/nsx-naginata-804249.html
-struct WeaponConeConfig
+struct WeaponConeConfig 
+	: public SerializerInterface
 {
 	float Minimum;
 	float Maximum;
@@ -20,6 +23,8 @@ struct WeaponConeConfig
 	//ms after firing that the cone recovery begins. Usually 0.
 	float RecoveryDelay;
 
+	virtual void Serialize(bool bSerializing, nlohmann::json& Json) override;
+
 	WeaponConeConfig() :
 		Minimum(0.f),
 		Maximum(0.f),
@@ -32,6 +37,7 @@ struct WeaponConeConfig
 };
 
 struct RangeGradiationConfig
+	: public SerializerInterface
 {
 	//Whether we should use this gradiation in the UI
 	bool bUseGradiation;
@@ -50,6 +56,7 @@ struct RangeGradiationConfig
 	//The distance displayed on each of the gradiation marks.
 	int MarkDistanceInterval;
 
+	virtual void Serialize(bool bSerializing, nlohmann::json& Json) override;
 
 	RangeGradiationConfig() :
 		bUseGradiation(false),
@@ -62,7 +69,8 @@ struct RangeGradiationConfig
 	}
 };
 
-struct WeaponFireModeConfig
+struct WeaponFireModeConfig 
+	: public SerializerInterface
 {
 	RangeGradiationConfig RangeGradiation;
 
@@ -104,15 +112,35 @@ struct WeaponFireModeConfig
 	WeaponConeConfig Crouching;
 	WeaponConeConfig StandingMove; //Known as 'running' cone of fire in the https://liquidwarp.honu.pw/ website.
 	WeaponConeConfig CrouchingMove;
+
+	virtual void Serialize(bool bSerializing, nlohmann::json& Json) override;
 };
 
-struct WeaponConfig
+//TODO: allow toggleable fire modes. (eg. TRAP-M1's 2 burst fire modes)
+//This should also transmit through the \
+
+struct WeaponFireGroupConfig
+	: public SerializerInterface
 {
 	//Hipfire fire configuration
 	WeaponFireModeConfig HipConfig;
 
 	//Aim down sights fire configuration
 	WeaponFireModeConfig ADSConfig;
+
+	//Gets the inner configuration of the current fire group based on whether we're adsing or not.
+	const WeaponFireModeConfig& GetFireModeConfig(bool bADS) const { return bADS ? ADSConfig : HipConfig; }
+	WeaponFireModeConfig& GetFireModeConfig(bool bADS) { return bADS ? ADSConfig : HipConfig; }
+
+	virtual void Serialize(bool bSerializing, nlohmann::json& Json) override;
+
+	WeaponFireGroupConfig() : HipConfig(), ADSConfig() {}
+};
+
+struct WeaponConfig
+	: public SerializerInterface
+{
+	std::vector<WeaponFireGroupConfig> FireGroups;
 
 	//Number of bullets the magazine holds.
 	int MagSize;
@@ -123,17 +151,21 @@ struct WeaponConfig
 	//Long reload (empty magazine reload) in seconds
 	float ReloadTimeLong;
 
-	//Gets the inner configuration of the current fire mode based on whether we're adsing or not.
-	const WeaponFireModeConfig& GetFireModeConfig(bool bADS) const { return bADS ? ADSConfig : HipConfig; }
-	WeaponFireModeConfig& GetFireModeConfig(bool bADS) { return bADS ? ADSConfig : HipConfig; }
+	//Ensure you only use these after making the FireGroups array.
+	const WeaponFireGroupConfig& GetFireGroupConfig(int Index) const { return FireGroups[Index]; }
+	WeaponFireGroupConfig& GetFireGroupConfig(int Index) { return FireGroups[Index]; }
+	
+	virtual void Serialize(bool bSerializing, nlohmann::json& Json) override;
 
 	WeaponConfig() :
-		HipConfig(),
-		ADSConfig(),
+		FireGroups(),
 		MagSize(0),
 		ReloadTimeLong(0.f),
 		ReloadTimeShort(0.f)
-	{};
+	{
+		//add at least one.
+		FireGroups.push_back(WeaponFireGroupConfig());
+	};
 };
 
 //Countdown state system
@@ -175,6 +207,9 @@ struct WeaponConfigState
 	int ShotsLeftInBurst = 0; // 0 means it is not going to fire yet.
 
 	float CurrentCOF = 0.f;
+
+	//The current fire group in the FireGroup array. Usually 0.
+	int CurrentFireGroup = 0;
 
 	Countdown<float> TimeToNextFire;//Amount of time before the next fire is available.
 	Countdown<float> TimeToRecovery;//The amount of time until recovery starts. Usually zero, but is reset whenever lmb is held.

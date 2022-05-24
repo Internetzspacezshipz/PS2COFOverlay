@@ -2,6 +2,78 @@
 
 #include "WeaponConfig.h"
 
+using namespace nlohmann;
+
+//Yucky
+void WeaponConeConfig::Serialize(bool bSerializing, nlohmann::json& Json)
+{
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, Minimum);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, Maximum);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, PelletSpread);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, Bloom);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, RecoveryRate);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, GrowRate);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, RecoveryDelay);
+}
+
+void RangeGradiationConfig::Serialize(bool bSerializing, nlohmann::json& Json)
+{
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, bUseGradiation);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, Scale);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, Linearity);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, NumMarks);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, NumInvisibleMarks);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, MarkDistanceInterval);
+}
+
+void WeaponFireModeConfig::Serialize(bool bSerializing, nlohmann::json& Json)
+{
+	JSON_SERIALIZE_OBJECT(Json, bSerializing, RangeGradiation);
+
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, Zoom);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, ROF);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, ShotsPerBurst);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, DelayBeforeFire);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, bAllowsFireCancel);
+}
+
+void WeaponFireGroupConfig::Serialize(bool bSerializing, nlohmann::json& Json)
+{
+	JSON_SERIALIZE_OBJECT(Json, bSerializing, HipConfig);
+	JSON_SERIALIZE_OBJECT(Json, bSerializing, ADSConfig);
+}
+
+void WeaponConfig::Serialize(bool bSerializing, nlohmann::json& Json)
+{
+	JSON_SERIALIZE_ARRAY(Json, bSerializing, FireGroups, WeaponFireGroupConfig);
+#if  0
+	if (bSerializing)
+	{
+		nlohmann::json NewArray = nlohmann::json::array({});
+		for (auto& Elem : FireGroups)
+		{
+			nlohmann::json NewObject;
+			Elem.Serialize(bSerializing, NewObject);
+			NewArray.push_back(NewObject);
+		}
+		Json.emplace_back(json{ "ArrayName", NewArray });
+	}
+	else
+	{
+		auto& InnerArray = Json.find("ArrayName").value();
+		for (auto& Elem : InnerArray)
+		{
+			WeaponFireGroupConfig NewSubObject;
+			NewSubObject.Serialize(bSerializing, Elem);
+			FireGroups.push_back(NewSubObject);
+		}
+	}
+#endif
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, MagSize);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, ReloadTimeShort);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, ReloadTimeLong);
+}
+
 float WeaponConfigState::Tick(float DeltaTime, 
 	bool bTryingToFire, 
 	bool bMoving, 
@@ -14,7 +86,9 @@ float WeaponConfigState::Tick(float DeltaTime,
 		return 1.f;
 	}
 
-	const WeaponFireModeConfig& CurrentFireModeConfig = Config->GetFireModeConfig(bIsADSed);
+	//Get configuration
+	const WeaponFireGroupConfig& CurrentFireGroupConfig = Config->GetFireGroupConfig(CurrentFireGroup);
+	const WeaponFireModeConfig& CurrentFireModeConfig = CurrentFireGroupConfig.GetFireModeConfig(bIsADSed);
 	const WeaponConeConfig& CurrentConeConfig = CurrentFireModeConfig.GetConeConfig(bMoving, bIsCrouched);
 	
 	//Timers
@@ -128,3 +202,4 @@ float WeaponConfigState::Tick(float DeltaTime,
 
 	return CurrentFireModeConfig.Zoom;
 }
+

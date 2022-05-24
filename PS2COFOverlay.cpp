@@ -6,6 +6,7 @@
 #include "framework.h"
 #include <string>
 #include <ctime>
+#include "dwmapi.h"//for DwmExtendFrameIntoClientArea 
 
 //Disable warnings for uninitialized variables
 #pragma warning(disable: 26495)
@@ -17,16 +18,31 @@
 
 #pragma warning(default: 26495)
 
-//Boost
-#include "boost_1_79_0\boost\filesystem.hpp"
-
 //proj includes
 #include "PS2COFOverlay.h"
 #include "Source/Paint.h"
 #include "Source/WeaponConfig.h"
+#include "Source/DataLoader.h"
 
-//Test boost
-boost::filesystem::path Path;
+//Boost includes
+#include "boost/shared_ptr.hpp"
+
+// Get the horizontal and vertical screen sizes in pixel https://stackoverflow.com/questions/8690619/how-to-get-screen-resolution-in-c
+void GetDesktopResolution(int& horizontal, int& vertical)
+{
+	RECT desktop;
+	// Get a handle to the desktop window
+	const HWND hDesktop = GetDesktopWindow();
+	// Get the size of screen to the variable desktop
+	GetWindowRect(hDesktop, &desktop);
+	// The top left corner will have coordinates (0,0)
+	// and the bottom right corner will have coordinates
+	// (horizontal, vertical)
+	horizontal = desktop.right;
+	vertical = desktop.bottom;
+}
+
+boost::shared_ptr<DataLoader> DataLoaderPtr;
 
 struct IDirect3DDevice9Ex;
 
@@ -43,7 +59,7 @@ Paint* PaintObject = nullptr;
 float FOV = 74.f;
 bool bToggleCrouch = true;
 
-bool bMenuOpen = false;
+bool bMenuOpen = true;
 
 void UpdateOverlayState(bool MenuOpen, HWND ownd)
 {
@@ -100,16 +116,19 @@ LRESULT CALLBACK mouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 HHOOK MouseHook;
 
 //TODO: draw UI for adjusting weapon stats.
-void InitGUI(IDirect3DDevice9Ex* Device, HWND* TargetHWND)
+void InitGUI(D3DDeviceType* Device, HWND* TargetHWND)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+	//io.DisplaySize = { (float)height, (float)width };
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+
     // Setup Platform/Renderer bindings
     ImGui_ImplWin32_Init(TargetHWND);
     ImGui_ImplDX9_Init(Device);
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
 
 	//hack code.
 	MouseHook = SetWindowsHookEx(WH_MOUSE, mouseProc, 0, GetCurrentThreadId()); // Our MouseInput Hook
@@ -212,26 +231,13 @@ bool MaybeSwitchWeapon()
 	return bSwitchOccurred;
 }
 
-// Get the horizontal and vertical screen sizes in pixel https://stackoverflow.com/questions/8690619/how-to-get-screen-resolution-in-c
-void GetDesktopResolution(int& horizontal, int& vertical)
-{
-	RECT desktop;
-	// Get a handle to the desktop window
-	const HWND hDesktop = GetDesktopWindow();
-	// Get the size of screen to the variable desktop
-	GetWindowRect(hDesktop, &desktop);
-	// The top left corner will have coordinates (0,0)
-	// and the bottom right corner will have coordinates
-	// (horizontal, vertical)
-	horizontal = desktop.right;
-	vertical = desktop.bottom;
-}
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+void			    Draw();
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -241,6 +247,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
+	DataLoaderPtr = boost::shared_ptr<DataLoader>(new DataLoader());
+	
     // Initialize global strings
     MyRegisterClass(hInstance);
 
@@ -253,6 +261,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     }
 
     PaintObject = new Paint(overlayHWND, width, height);
+
+	//Moved from end of InitInstance()
+	ShowWindow(overlayHWND, nCmdShow);
+	UpdateWindow(overlayHWND);
 
     //HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_PS2COFOVERLAY));
 	InitGUI(PaintObject->GetDevice(), &overlayHWND);
@@ -283,6 +295,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		//todo: add quit button
 
 		const bool bMoving = IsMoving();
+
+		bMenuOpen = GetKeyState(VK_F3);//open menu
+
 		const bool bFiring = GetAsyncKeyState(0x01);//LMB
 		const bool bIsADSed = GetAsyncKeyState(0x02);//RMB
 		const bool bIsReloadPressed = GetAsyncKeyState(0x52) || GetAsyncKeyState(0x72); //R/r
@@ -296,6 +311,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		//Max cone
 		CurrentCOF_ZoomAdjusted = CurrentState.CurrentCOF * AngleToPixel;
+
+		Draw();
 
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -332,7 +349,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hbrBackground  = CreateSolidBrush(RGB(0,0,0));
     wcex.lpszMenuName   = Title;
     wcex.lpszClassName  = Title;
-    wcex.hIconSm        = 0;
+	wcex.hIconSm		= 0;
 
     return RegisterClassExW(&wcex);
 }
@@ -350,7 +367,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
-
+#if 1
    overlayHWND = CreateWindowExW(
 	   WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED,
 	   Title,
@@ -364,15 +381,42 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   nullptr,
 	   hInstance,
 	   nullptr);
+   //idk?
+  //const MARGINS Marg = { -1 };
+  //DwmExtendFrameIntoClientArea(overlayHWND, &Marg);
+
+#elif 0
+   overlayHWND = ::CreateWindow(Title, Title, WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, hInstance, NULL);
+#elif 0
+   overlayHWND = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE, Title, Title, WS_POPUP, 1, 1, 1920, 1080, 0, 0, 0, 0);
+   SetLayeredWindowAttributes(overlayHWND, 0, 1.0f, LWA_ALPHA);
+   SetLayeredWindowAttributes(overlayHWND, 0, RGB(0, 0, 0), LWA_COLORKEY);
+#elif 1
+   overlayHWND = CreateWindowEx(WS_EX_COMPOSITED,      // dwExStyle
+	   Title,          // lpClassName
+	   Title,          // lpWindowName
+	   WS_POPUP, // dwStyle
+	   CW_USEDEFAULT,         // x
+	   CW_USEDEFAULT,         // y
+	   width,              // nWidth
+	   height,             // nHeight
+	   NULL,                  // hWndParent
+	   NULL,                  // hMenu
+	   hInstance,             // hInstance
+	   NULL);                 // lpParam
+
+   const MARGINS Marg = {-1};
+
+   DwmExtendFrameIntoClientArea(overlayHWND, &Marg);
+
+#endif
 
    if (!overlayHWND)
    {
-      return FALSE;
+	   return FALSE;
    }
-   SetLayeredWindowAttributes(overlayHWND, RGB(0, 0, 0), 0, LWA_COLORKEY);
 
-   ShowWindow(overlayHWND, nCmdShow);
-   UpdateWindow(overlayHWND);
+   SetLayeredWindowAttributes(overlayHWND, RGB(0, 0, 0), 0, LWA_COLORKEY);
 
    return TRUE;
 }
@@ -392,38 +436,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_PAINT:
-        if (PaintObject)
-        {
-			PaintObject->Start();
-
-			ImGui_ImplWin32_NewFrame();
-			ImGui_ImplDX9_NewFrame();
-
-
-			ImGui::NewFrame();
-
-			ImGui::Begin("Test");
-
-
-			//TEXT SHIT.
-			ImGui::Button("ButtonName", ImVec2(500, 500));
-			ImGui::Text("WHATEVER TEST SHIT THIS IS");
-
-			//RENDER CROSSHARI
-            PaintObject->Render(CurrentCOF_ZoomAdjusted, nullptr/*(char*)&calls*/);
-
-			ImGui::End();
-			ImGui::Render();
-
-			if (auto* DrawData = ImGui::GetDrawData())
-			{
-				//This is hack maybe not work right if this done.
-				//DrawData->DisplaySize = ImVec2(500, 500);
-				ImGui_ImplDX9_RenderDrawData(DrawData);
-			}
-
-			PaintObject->End();
-        }
         break;
     case WM_DESTROY:
         PostQuitMessage(0);
@@ -433,3 +445,67 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
+
+//Big clear
+void Clear()
+{
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 0.50f);
+	PaintObject->GetDevice()->SetRenderState(D3DRS_ZENABLE, FALSE);
+	PaintObject->GetDevice()->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+	PaintObject->GetDevice()->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+	D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(clear_color.x * clear_color.w * 255.0f), (int)(clear_color.y * clear_color.w * 255.0f), (int)(clear_color.z * clear_color.w * 255.0f), (int)(clear_color.w * 255.0f));
+	//PaintObject->GetDevice()->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
+
+	PaintObject->GetDevice()->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00000000, 1.0f, 0);
+}
+
+void Draw()
+{
+	if (PaintObject && ImGui::GetCurrentContext())
+	{
+		PaintObject->Start();
+
+		ImGui_ImplDX9_NewFrame();
+		ImGui_ImplWin32_NewFrame(height, width);
+
+
+		ImGui::NewFrame();
+
+		ImGui::Begin("Test");
+		ImGui::SetWindowSize({ 500.f, 1000.f });
+		
+		//TEXT SHIT.
+		ImGui::Button("ButtonName", ImVec2(500, 500));
+		ImGui::Text("WHATEVER TEST SHIT THIS IS");
+		
+		ImGui::End();
+
+		//ImGui::ShowDemoWindow();
+
+		ImGui::EndFrame();
+
+		Clear();
+		//RENDER CROSSHARIR
+		PaintObject->Render(CurrentCOF_ZoomAdjusted, nullptr/*(char*)&calls*/);
+
+		ImGui::Render();
+
+		//if (PaintObject->GetDevice()->BeginScene() >= 0)
+		//{
+		//	ImGui::Render();
+		//	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
+		//	PaintObject->GetDevice()->EndScene();
+		//}
+
+		//PaintObject->GetDevice()->Present(0, 0, 0, 0);
+		if (auto* DrawData = ImGui::GetDrawData())
+		{
+			//This is hack maybe not work right if this done.
+			//DrawData->DisplaySize = ImVec2(width, height);
+			ImGui_ImplDX9_RenderDrawData(DrawData);
+		}
+
+		PaintObject->End();
+	}
+}
+

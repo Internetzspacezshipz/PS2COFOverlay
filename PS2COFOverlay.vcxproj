@@ -110,6 +110,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)Ext\;$(ProjectDir)Ext\boost_1_79_0\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -204,6 +205,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="PS2COFOverlay.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="Source\DataLoader.h" />
     <ClInclude Include="Source\Paint.h" />
     <ClInclude Include="Source\WeaponConfig.h" />
     <ClInclude Include="targetver.h" />
@@ -219,6 +221,7 @@
     <ClCompile Include="Ext\imgui\imgui_tables.cpp" />
     <ClCompile Include="Ext\imgui\imgui_widgets.cpp" />
     <ClCompile Include="PS2COFOverlay.cpp" />
+    <ClCompile Include="Source\DataLoader.cpp" />
     <ClCompile Include="Source\Paint.cpp" />
     <ClCompile Include="Source\WeaponConfig.cpp" />
   </ItemGroup>

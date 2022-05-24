@@ -17,10 +17,22 @@
 //#pragma comment(lib, "imgui_impl_win32.lib")
 
 
+#define USING_D3DEX 1
+
+#if USING_D3DEX
+//Typedefs to allow easier switching of type.
+typedef IDirect3D9Ex D3DType;
+typedef IDirect3DDevice9Ex D3DDeviceType;
+#else
+//Typedefs to allow easier switching of type.
+typedef IDirect3D9 D3DType;
+typedef IDirect3DDevice9 D3DDeviceType;
+#endif
+
 class Paint
 {
-	IDirect3D9Ex* Object = nullptr;
-	IDirect3DDevice9Ex* Device = nullptr;
+	D3DType* Object = nullptr;
+	D3DDeviceType* Device = nullptr;
 	D3DPRESENT_PARAMETERS Parameters;
 	ID3DXFont* Font = nullptr;
 	ID3DXLine* Line = nullptr;
@@ -53,8 +65,8 @@ public:
 		CrosshairColor = D3DCOLOR_COLORVALUE(R, G, B, A);
 	}
 
-	IDirect3DDevice9Ex* GetDevice() const { return Device; };
-	IDirect3D9Ex* GetObject() const { return Object;  };
+	D3DDeviceType* GetDevice() const { return Device; };
+	D3DType* GetD3Object() const { return Object;  };
 
 	Paint() = delete;
 	Paint(HWND OverlayHWND, int InWidth, int InHeight);

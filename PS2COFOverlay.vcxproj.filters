@@ -189,6 +189,9 @@
     <ClInclude Include="Ext\Json\json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Source\DataLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PS2COFOverlay.cpp">
@@ -225,6 +228,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\WeaponConfig.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\DataLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

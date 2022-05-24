@@ -2,10 +2,17 @@
 
 int Paint::Init(HWND hWND)
 {
+#if USING_D3DEX
 	if (FAILED(Direct3DCreate9Ex(D3D_SDK_VERSION, &Object)))
 	{
 		exit(1);
 	}
+#else
+	if ((Object = Direct3DCreate9(D3D_SDK_VERSION)) == nullptr)
+	{
+		exit(1);
+	}
+#endif
 
 	ZeroMemory(&Parameters, sizeof(Parameters));
 
@@ -15,11 +22,17 @@ int Paint::Init(HWND hWND)
 	Parameters.hDeviceWindow = hWND;
 	Parameters.SwapEffect = D3DSWAPEFFECT_DISCARD;
 	Parameters.MultiSampleQuality = D3DMULTISAMPLE_NONE;
-	Parameters.BackBufferFormat = D3DFMT_A8R8G8B8;
+	Parameters.BackBufferFormat = D3DFMT_UNKNOWN;// D3DFMT_A8R8G8B8;
 	Parameters.EnableAutoDepthStencil = TRUE;
 	Parameters.AutoDepthStencilFormat = D3DFMT_D16;
-	
+	Parameters.PresentationInterval = D3DPRESENT_INTERVAL_IMMEDIATE;//no vsync
+
+#if USING_D3DEX
 	Object->CreateDeviceEx(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWND, D3DCREATE_HARDWARE_VERTEXPROCESSING, &Parameters, 0 ,&Device);
+#else
+	Object->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWND, D3DCREATE_HARDWARE_VERTEXPROCESSING, &Parameters, &Device);
+#endif
+
 	D3DXCreateFontW(Device, 50, 0, FW_BOLD, 1, false, DEFAULT_CHARSET, OUT_DEVICE_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH, L"Comic Sans", &Font);
 	
 	D3DXCreateLine(Device, &Line);
@@ -72,7 +85,11 @@ void Paint::Start()
 void Paint::End()
 {
 	Device->EndScene();
+#if USING_D3DEX
 	Device->PresentEx(0, 0, 0, 0, 0);
+#else
+	Device->Present(0, 0, 0, 0);
+#endif
 }
 
 void Paint::Render(float CurrentCOF, char* test)

@@ -328,16 +328,27 @@ static void ImGui_ImplWin32_UpdateGamepads()
 #endif // #ifndef IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
 }
 
-void    ImGui_ImplWin32_NewFrame()
+//MODIFIED - Must pass height and width since hWnd does not pass correct size since it assumes minimized
+void    ImGui_ImplWin32_NewFrame(int Height, int Width)
 {
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData();
-    IM_ASSERT(bd != NULL && "Did you call ImGui_ImplWin32_Init()?");
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData();
+	IM_ASSERT(bd != NULL && "Did you call ImGui_ImplWin32_Init()?");
 
-    // Setup display size (every frame to accommodate for window resizing)
-    RECT rect = { 0, 0, 0, 0 };
-    ::GetClientRect(bd->hWnd, &rect);
-    io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+	RECT rect = { 0, 0, 0, 0 };
+
+	if (Height == 0 || Width == 0)
+	{
+		// Setup display size (every frame to accommodate for window resizing)
+		::GetClientRect(bd->hWnd, &rect);
+	}
+	else
+	{
+		rect.right = Width;
+		rect.bottom = Height;
+	}
+
+	io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
 
     // Setup time step
     INT64 current_time = 0;
