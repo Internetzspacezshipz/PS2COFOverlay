@@ -105,6 +105,16 @@ void Paint::Render(float CurrentCOF, char* test)
 	}
 }
 
+void Paint::Clear()
+{
+	Device->SetRenderState(D3DRS_ZENABLE, FALSE);
+	Device->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
+	Device->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
+
+	//transparent clear.
+	Device->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00000000, 1.0f, 0);
+}
+
 Paint::Paint(HWND OverlayHWND, int InWidth, int InHeight) 
 	: Width(InWidth), Height(InHeight)
 {

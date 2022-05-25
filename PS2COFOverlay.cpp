@@ -11,10 +11,12 @@
 //Disable warnings for uninitialized variables
 #pragma warning(disable: 26495)
 
-//ingui incl
+//imgui incl
 #include "ext/imgui/imgui.h"
 #include "ext/imgui/imgui_impl_dx9.h"
 #include "ext/imgui/imgui_impl_win32.h"
+//imgui windows proc handler
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 #pragma warning(default: 26495)
 
@@ -59,7 +61,7 @@ Paint* PaintObject = nullptr;
 float FOV = 74.f;
 bool bToggleCrouch = true;
 
-bool bMenuOpen = true;
+bool bMenuOpen = false;
 
 void UpdateOverlayState(bool MenuOpen, HWND ownd)
 {
@@ -132,6 +134,7 @@ void InitGUI(D3DDeviceType* Device, HWND* TargetHWND)
 
 	//hack code.
 	MouseHook = SetWindowsHookEx(WH_MOUSE, mouseProc, 0, GetCurrentThreadId()); // Our MouseInput Hook
+
 	ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Arial.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 }
 
@@ -279,7 +282,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	CurrentState.Config = &Config1;
 
     // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
+    while (GetMessage(&msg, overlayHWND, 0, 0))
     {
 		//Setup time
 		clock_t Now = clock();
@@ -293,10 +296,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		MaybeSwitchWeapon();
 
 		//todo: add quit button
-
 		const bool bMoving = IsMoving();
 
-		bMenuOpen = GetKeyState(VK_F3);//open menu
+		if (GetAsyncKeyState(VK_F3))//open menu
+		{
+			//lazy
+			bMenuOpen = !bMenuOpen;
+			Sleep(100);
+			if (bMenuOpen)
+			{
+				auto extendedStyle = GetWindowLong(overlayHWND, GWL_EXSTYLE);
+				SetWindowLong(overlayHWND, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
+			}
+			else
+			{
+				auto extendedStyle = GetWindowLong(overlayHWND, GWL_EXSTYLE);
+				SetWindowLong(overlayHWND, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
+			}
+		}
 
 		const bool bFiring = GetAsyncKeyState(0x01);//LMB
 		const bool bIsADSed = GetAsyncKeyState(0x02);//RMB
@@ -367,7 +384,6 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
-#if 1
    overlayHWND = CreateWindowExW(
 	   WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED,
 	   Title,
@@ -381,35 +397,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   nullptr,
 	   hInstance,
 	   nullptr);
-   //idk?
-  //const MARGINS Marg = { -1 };
-  //DwmExtendFrameIntoClientArea(overlayHWND, &Marg);
-
-#elif 0
-   overlayHWND = ::CreateWindow(Title, Title, WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, hInstance, NULL);
-#elif 0
-   overlayHWND = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE, Title, Title, WS_POPUP, 1, 1, 1920, 1080, 0, 0, 0, 0);
-   SetLayeredWindowAttributes(overlayHWND, 0, 1.0f, LWA_ALPHA);
-   SetLayeredWindowAttributes(overlayHWND, 0, RGB(0, 0, 0), LWA_COLORKEY);
-#elif 1
-   overlayHWND = CreateWindowEx(WS_EX_COMPOSITED,      // dwExStyle
-	   Title,          // lpClassName
-	   Title,          // lpWindowName
-	   WS_POPUP, // dwStyle
-	   CW_USEDEFAULT,         // x
-	   CW_USEDEFAULT,         // y
-	   width,              // nWidth
-	   height,             // nHeight
-	   NULL,                  // hWndParent
-	   NULL,                  // hMenu
-	   hInstance,             // hInstance
-	   NULL);                 // lpParam
-
-   const MARGINS Marg = {-1};
-
-   DwmExtendFrameIntoClientArea(overlayHWND, &Marg);
-
-#endif
 
    if (!overlayHWND)
    {
@@ -433,6 +420,11 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	if (ImGui::GetCurrentContext())
+	{
+		ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam);
+	}
+
     switch (message)
     {
     case WM_PAINT:
@@ -446,18 +438,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-//Big clear
-void Clear()
-{
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 0.50f);
-	PaintObject->GetDevice()->SetRenderState(D3DRS_ZENABLE, FALSE);
-	PaintObject->GetDevice()->SetRenderState(D3DRS_ALPHABLENDENABLE, FALSE);
-	PaintObject->GetDevice()->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE);
-	D3DCOLOR clear_col_dx = D3DCOLOR_RGBA((int)(clear_color.x * clear_color.w * 255.0f), (int)(clear_color.y * clear_color.w * 255.0f), (int)(clear_color.z * clear_color.w * 255.0f), (int)(clear_color.w * 255.0f));
-	//PaintObject->GetDevice()->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, clear_col_dx, 1.0f, 0);
-
-	PaintObject->GetDevice()->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0x00000000, 1.0f, 0);
-}
 
 void Draw()
 {
@@ -468,36 +448,29 @@ void Draw()
 		ImGui_ImplDX9_NewFrame();
 		ImGui_ImplWin32_NewFrame(height, width);
 
-
 		ImGui::NewFrame();
 
-		ImGui::Begin("Test");
-		ImGui::SetWindowSize({ 500.f, 1000.f });
-		
-		//TEXT SHIT.
-		ImGui::Button("ButtonName", ImVec2(500, 500));
-		ImGui::Text("WHATEVER TEST SHIT THIS IS");
-		
-		ImGui::End();
+		//UI GOES HERE
+		if (bMenuOpen)
+		{
+			ImGui::Begin("Test", &bMenuOpen);
+			ImGui::SetWindowSize({ 500.f, 1000.f });
 
-		//ImGui::ShowDemoWindow();
+			//TEST SHIT.
+			ImGui::Button("ButtonName", ImVec2(500, 500));
+			ImGui::Text("WHATEVER TEST SHIT THIS IS");
+
+			ImGui::End();
+		}
+
 
 		ImGui::EndFrame();
 
-		Clear();
 		//RENDER CROSSHARIR
 		PaintObject->Render(CurrentCOF_ZoomAdjusted, nullptr/*(char*)&calls*/);
 
 		ImGui::Render();
 
-		//if (PaintObject->GetDevice()->BeginScene() >= 0)
-		//{
-		//	ImGui::Render();
-		//	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
-		//	PaintObject->GetDevice()->EndScene();
-		//}
-
-		//PaintObject->GetDevice()->Present(0, 0, 0, 0);
 		if (auto* DrawData = ImGui::GetDrawData())
 		{
 			//This is hack maybe not work right if this done.

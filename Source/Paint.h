@@ -54,6 +54,9 @@ public:
 	void End();
 	void Render(float CurrentCOF, char* test);
 
+	//Unused currently. Might be needed if any issues with dragging
+	void Clear();
+
 	int PipLength = 15;
 	int PipWidth = 2;
 
