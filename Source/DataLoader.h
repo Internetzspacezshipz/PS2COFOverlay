@@ -15,7 +15,7 @@ if (bIsSerializing)															   \
 }																			   \
 else																		   \
 {																			   \
-	VariableName = JsonVariable[""#VariableName""];							   \
+	VariableName = JsonVariable.find(""#VariableName"").value();			   \
 }
 
 #define JSON_SERIALIZE_OBJECT(JsonVariable, bIsSerializing, VariableName)	   \
@@ -31,21 +31,47 @@ else																		   \
 	VariableName.Serialize(bIsSerializing, InnerObject);					   \
 }
 
-#define JSON_SERIALIZE_ARRAY(JsonVariable, bIsSerializing, ArrayName, ObjectType)\
+#if  0
+if (bSerializing)
+{
+	nlohmann::json NewArray = nlohmann::json::array({});
+	for (auto& Elem : FireGroups)
+	{
+		nlohmann::json NewObject;
+		Elem.Serialize(bSerializing, NewObject);
+		NewArray.push_back(NewObject);
+	}
+	Json.emplace_back(json{ "ArrayName", NewArray });
+}
+else
+{
+	auto& InnerArray = Json.find("ArrayName").value();
+	for (auto& Elem : InnerArray)
+	{
+		WeaponFireGroupConfig NewSubObject;
+		NewSubObject.Serialize(bSerializing, Elem);
+		FireGroups.push_back(NewSubObject);
+	}
+}
+#endif
+
+//above ^^^^
+
+#define JSON_SERIALIZE_OBJECT_ARRAY(JsonVariable, bIsSerializing, ArrayName, ObjectType)\
 if (bIsSerializing)																  \
 {																				  \
-	nlohmann::json NewArray = nlohmann::json::array({});						  \
+	nlohmann::json NewArray = nlohmann::json::array({});					\
 	for (auto& Elem : ArrayName)												  \
 	{																			  \
 		nlohmann::json NewObject;												  \
 		Elem.Serialize(bSerializing, NewObject);								  \
 		NewArray.push_back(NewObject);											  \
 	}																			  \
-	JsonVariable.emplace_back(json{ ""#ArrayName"", NewArray });				  \
+	JsonVariable.emplace_back(nlohmann::json{ ""#ArrayName"", NewArray });		 \
 }																				  \
 else																			  \
 {																				  \
-	auto& InnerArray = Json.find(""#ArrayName"").value();						  \
+	auto& InnerArray = JsonVariable.find(""#ArrayName"").value();				\
 	for (auto& Elem : InnerArray)												  \
 	{																			  \
 		ObjectType NewSubObject;												  \
@@ -55,19 +81,56 @@ else																			  \
 }
 
 
+#define JSON_SERIALIZE_ARRAY(JsonVariable, bIsSerializing, ArrayName, ObjectType) \
+if (bIsSerializing)																  \
+{																				  \
+	nlohmann::json NewArray = nlohmann::json::array({});					  \
+	for (auto& Elem : ArrayName)												  \
+	{																			  \
+		NewArray.push_back(Elem);												  \
+	}																			  \
+	JsonVariable.emplace_back(nlohmann::json{ ""#ArrayName"", NewArray });				  \
+}																				  \
+else																			  \
+{																				  \
+	auto& InnerArray = JsonVariable.find(""#ArrayName"").value();						  \
+	for (auto& Elem : InnerArray)												  \
+	{																			  \
+		ArrayName.push_back(Elem);												  \
+	}																			  \
+}
+
+
 struct SerializerInterface
 {
 	virtual void Serialize(bool bSerializing, nlohmann::json& TargetJson) = 0;
 };
 
+
+//CONST FOLDER LOCATIONS
+const boost::filesystem::path UseSettingsFileName = "Settings.json";
+
+const boost::filesystem::path SettingsSubFolder = "Settings";
+const boost::filesystem::path WeaponsSubFolder = "Weapons";
+const boost::filesystem::path LoadoutsSubFolder = "Loadouts";
+
+const std::string BaseLoadoutName = "Loadout_";
+const std::string BaseWeaponName = "Weapon_";
+
 //You're never gonna believe what this class does.
 class DataLoader
 {
-	//Gets set to data folder path
-	boost::filesystem::path DataFolderPath;
+	//Total path to given folders for simplicity of use.
+	boost::filesystem::path SettingsFolderPath;
+	boost::filesystem::path WeaponsFolderPath;
+	boost::filesystem::path LoadoutsFolderPath;
 
 public:
 	DataLoader();
 
-	void GetWeaponConfigNames(boost::shared_array<std::string>& OutArray);
+	nlohmann::json LoadFileToJson(boost::filesystem::path Path) const;
+
+	nlohmann::json LoadUserSettings() const;
+	nlohmann::json LoadWeaponJson(const std::string& WeaponName) const;
+	nlohmann::json LoadUserLoadoutConfig(const std::string& SpecifiedLoadout) const;
 };

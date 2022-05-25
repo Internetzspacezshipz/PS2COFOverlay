@@ -6,7 +6,6 @@
 #include "framework.h"
 #include <string>
 #include <ctime>
-#include "dwmapi.h"//for DwmExtendFrameIntoClientArea 
 
 //Disable warnings for uninitialized variables
 #pragma warning(disable: 26495)
@@ -24,29 +23,16 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "PS2COFOverlay.h"
 #include "Source/Paint.h"
 #include "Source/WeaponConfig.h"
+#include "Source/LoadoutConfigState.h"
 #include "Source/DataLoader.h"
+#include "Source/UserSettings.h"
+
+//Misc includes
+#include "Source/MiscUtils.inl"
 
 //Boost includes
 #include "boost/shared_ptr.hpp"
 
-// Get the horizontal and vertical screen sizes in pixel https://stackoverflow.com/questions/8690619/how-to-get-screen-resolution-in-c
-void GetDesktopResolution(int& horizontal, int& vertical)
-{
-	RECT desktop;
-	// Get a handle to the desktop window
-	const HWND hDesktop = GetDesktopWindow();
-	// Get the size of screen to the variable desktop
-	GetWindowRect(hDesktop, &desktop);
-	// The top left corner will have coordinates (0,0)
-	// and the bottom right corner will have coordinates
-	// (horizontal, vertical)
-	horizontal = desktop.right;
-	vertical = desktop.bottom;
-}
-
-boost::shared_ptr<DataLoader> DataLoaderPtr;
-
-struct IDirect3DDevice9Ex;
 
 // Global Variables:
 HINSTANCE hInst;                                // current instance
@@ -63,29 +49,16 @@ bool bToggleCrouch = true;
 
 bool bMenuOpen = false;
 
-void UpdateOverlayState(bool MenuOpen, HWND ownd)
-{
-	//We call this function only when we open or close the menu
-	long style = GetWindowLong(ownd, GWL_EXSTYLE);
-	if (MenuOpen)
-	{
-		style &= ~WS_EX_LAYERED;
-		SetWindowLong(ownd,
-			GWL_EXSTYLE, style);
-		SetForegroundWindow(ownd);
-	}
-	else
-	{
-		style |= WS_EX_LAYERED;
-		SetWindowLong(ownd,
-			GWL_EXSTYLE, style);
-	}
-	//Credits go to someone from UC
-}
+boost::shared_ptr<DataLoader> DataLoaderObject;
+boost::shared_ptr<UserSettings> UserSettingsObject;
+boost::shared_ptr<LoadoutConfigState> LoadoutConfigStateObject;
 
+float CurrentCOF_ZoomAdjusted;//temp for garbage
 
-//TODO: fix this shit because I don't think it'll work properly with an overlay type application. Is used for IMGUI
+/*Hooking*/
+//idk why these are two different vars. TODO: check this
 HHOOK hMouseHook;
+HHOOK MouseHook;
 LRESULT CALLBACK mouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	if (bMenuOpen) // bool
@@ -114,126 +87,28 @@ LRESULT CALLBACK mouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 	}
 	return CallNextHookEx(hMouseHook, nCode, wParam, lParam);
 }
-/*Hooking*/
-HHOOK MouseHook;
+
 
 //TODO: draw UI for adjusting weapon stats.
 void InitGUI(D3DDeviceType* Device, HWND* TargetHWND)
 {
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
 	//io.DisplaySize = { (float)height, (float)width };
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 
-    // Setup Platform/Renderer bindings
-    ImGui_ImplWin32_Init(TargetHWND);
-    ImGui_ImplDX9_Init(Device);
+	// Setup Platform/Renderer bindings
+	ImGui_ImplWin32_Init(TargetHWND);
+	ImGui_ImplDX9_Init(Device);
 
 	//hack code.
 	MouseHook = SetWindowsHookEx(WH_MOUSE, mouseProc, 0, GetCurrentThreadId()); // Our MouseInput Hook
 
 	ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Arial.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 }
-
-
-
-//Current state
-float CurrentCOF_ZoomAdjusted = 0.f;
-bool PressedMoveKeys[4];
-
-WeaponConfigState CurrentState;
-
-//primary weapon
-WeaponConfig Config1;
-//secondary weapon
-WeaponConfig Config2;
-//tert weapon (rocket launcher, etc)
-WeaponConfig Config3;
-
-
-/* from WinUser.h L#532
- * VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
- * 0x3A - 0x40 : unassigned
- * VK_A - VK_Z are the same as ASCII 'A' - 'Z' (0x41 - 0x5A)
- */
-
-bool IsMoving()
-{
-    short MovingKeys[8]
-    {
-        0x41,//A
-        0x61,//a
-
-        0x44,//D
-        0x64,//d
-
-        0x53,//S
-        0x73,//s
-
-        0x57,//W
-        0x77,//w
-    };
-
-    for (short i = 0; i < 8; i++)
-    {
-        if (GetAsyncKeyState(MovingKeys[i]))
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-int calls = 0;
-
-bool bCurrentlyCrouched = false;
-bool bLastCrouchPressed = false;
-
-//@todo: make this work
-bool IsCrouching()
-{
-	//C = 0x43
-	//c = 0x63
-
-	bool bCPressed = GetAsyncKeyState(0x43) || GetAsyncKeyState(0x63);
-	if (bToggleCrouch)
-	{
-		if (bLastCrouchPressed != bCPressed)
-		{
-			bCurrentlyCrouched = !bCurrentlyCrouched;
-			bLastCrouchPressed = bCPressed;
-		}
-	}
-	return bCPressed;
-}
-
-bool MaybeSwitchWeapon()
-{
-	bool bSwitchOccurred = false;
-
-	//Weapon switching.
-	if (GetAsyncKeyState(0x31))//1 key
-	{
-		bSwitchOccurred = true;
-		CurrentState.Config = &Config1;
-	}
-	else if (GetAsyncKeyState(0x32))//2 key
-	{
-		bSwitchOccurred = true;
-		CurrentState.Config = &Config2;
-	}
-	else if (GetAsyncKeyState(0x33))//3 key
-	{
-		bSwitchOccurred = true;
-		CurrentState.Config = &Config3;
-	}
-
-	return bSwitchOccurred;
-}
-
 
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -249,13 +124,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
-
-	DataLoaderPtr = boost::shared_ptr<DataLoader>(new DataLoader());
 	
     // Initialize global strings
     MyRegisterClass(hInstance);
 
-	GetDesktopResolution(width, height);
+	MiscUtils::GetDesktopResolution(width, height);
 
     // Perform application initialization:
     if (!InitInstance(hInstance, nCmdShow))
@@ -275,13 +148,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	SetWindowPos(overlayHWND, HWND_TOPMOST, 0, 0, width, height, 0);
 
-	clock_t LastTick = 0;
+	DataLoaderObject = boost::shared_ptr<DataLoader>(new DataLoader());
+	UserSettingsObject = boost::shared_ptr<UserSettings>(new UserSettings());
 
-	//todo: load configs
+	nlohmann::json UserSettingsJson = DataLoaderObject->LoadUserSettings();
 
-	CurrentState.Config = &Config1;
+	if (UserSettingsJson.empty())
+	{
+		//Write empty shit
+		UserSettingsObject->Serialize(true, UserSettingsJson);
+	}
+
+	UserSettingsObject->Serialize(false, UserSettingsJson);
+	/*
+	LoadoutConfig InLoadoutConfig;
+	InLoadoutConfig.Serialize(false, );
+	LoadoutConfigStateObject = boost::shared_ptr<LoadoutConfigState>(new LoadoutConfigState(InLoadoutConfig));
+	*/
 
     // Main message loop:
+	clock_t LastTick = 0;
     while (GetMessage(&msg, overlayHWND, 0, 0))
     {
 		//Setup time
@@ -289,45 +175,38 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		const float DeltaTime = ((float)(Now - LastTick)) / CLOCKS_PER_SEC;
 		LastTick = Now;
 
-		//do weapon switch if it's needed.
-		//todo: add support for combination weapons (UBGLs/UBSGs/etc)
-		//todo: add support for special abilities altering currently equipped weapon.
-		//todo: add support for equip times.
-		MaybeSwitchWeapon();
-
-		//todo: add quit button
-		const bool bMoving = IsMoving();
-
 		if (GetAsyncKeyState(VK_F3))//open menu
 		{
-			//lazy
 			bMenuOpen = !bMenuOpen;
+			//lazy
 			Sleep(100);
 			if (bMenuOpen)
 			{
+				//Set clickable
 				auto extendedStyle = GetWindowLong(overlayHWND, GWL_EXSTYLE);
 				SetWindowLong(overlayHWND, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
 			}
 			else
 			{
+				//Set not clickable
 				auto extendedStyle = GetWindowLong(overlayHWND, GWL_EXSTYLE);
 				SetWindowLong(overlayHWND, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
 			}
 		}
 
-		const bool bFiring = GetAsyncKeyState(0x01);//LMB
-		const bool bIsADSed = GetAsyncKeyState(0x02);//RMB
-		const bool bIsReloadPressed = GetAsyncKeyState(0x52) || GetAsyncKeyState(0x72); //R/r
-		const bool bIsCrouched = IsCrouching();//crouch
-		//const bool bIsSprinting = GetAsyncKeyState(VK_SHIFT);//sprint doesn't really matter rn
+		if (GetAsyncKeyState(VK_F2))//quit key
+		{
+			break;
+		}
 
-		const float CurrentZoom = CurrentState.Tick(DeltaTime, bFiring, bMoving, bIsCrouched, bIsADSed, bIsReloadPressed);
+
+		const float CurrentZoom = 1.f;//CurrentState.Tick(DeltaTime, bFiring, bMoving, bIsCrouched, bIsADSed, bIsReloadPressed);
 
 		//Simple conversion from angle to pixel size. Should be set in tick
 		const float AngleToPixel = height / (FOV / CurrentZoom);
 
 		//Max cone
-		CurrentCOF_ZoomAdjusted = CurrentState.CurrentCOF * AngleToPixel;
+		//CurrentCOF_ZoomAdjusted = CurrentState.CurrentCOF * AngleToPixel;
 
 		Draw();
 
@@ -437,7 +316,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-
 
 void Draw()
 {

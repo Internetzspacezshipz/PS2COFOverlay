@@ -94,6 +94,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(DXSDK_DIR)Include;$(ProjectDir)Ext\imgui;$(ProjectDir)backends;pathcch.h;$(ProjectDir)Ext\;$(ProjectDir)Ext\boost_1_79_0\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -111,6 +112,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)Ext\;$(ProjectDir)Ext\boost_1_79_0\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -206,7 +208,10 @@
     <ClInclude Include="PS2COFOverlay.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Source\DataLoader.h" />
+    <ClInclude Include="Source\XDynamicArray.h" />
+    <ClInclude Include="Source\LoadoutConfigState.h" />
     <ClInclude Include="Source\Paint.h" />
+    <ClInclude Include="Source\UserSettings.h" />
     <ClInclude Include="Source\WeaponConfig.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -222,7 +227,9 @@
     <ClCompile Include="Ext\imgui\imgui_widgets.cpp" />
     <ClCompile Include="PS2COFOverlay.cpp" />
     <ClCompile Include="Source\DataLoader.cpp" />
+    <ClCompile Include="Source\LoadoutConfigState.cpp" />
     <ClCompile Include="Source\Paint.cpp" />
+    <ClCompile Include="Source\UserSettings.cpp" />
     <ClCompile Include="Source\WeaponConfig.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -230,6 +237,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="imgui.ini" />
+    <None Include="Source\MiscUtils.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

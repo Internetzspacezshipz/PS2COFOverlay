@@ -1,7 +1,7 @@
-﻿  PS2COFOverlay.cpp
+﻿  DataLoader.cpp
   Generating code
-  1 of 2383 functions (<0.1%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    13 functions had inline decision re-evaluated but remain unchanged
+  87 of 2238 functions ( 3.9%) were compiled, the rest were copied from previous compilation.
+    2 functions were new in current compilation
+    17 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   PS2COFOverlay.vcxproj -> C:\Users\ColRem\source\repos\PS2COFOverlay\Release\PS2COFOverlay.exe

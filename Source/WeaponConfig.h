@@ -122,24 +122,26 @@ struct WeaponFireModeConfig
 struct WeaponFireGroupConfig
 	: public SerializerInterface
 {
-	//Hipfire fire configuration
-	WeaponFireModeConfig HipConfig;
-
-	//Aim down sights fire configuration
-	WeaponFireModeConfig ADSConfig;
+	std::vector<WeaponFireModeConfig> FireModeConfigs;
 
 	//Gets the inner configuration of the current fire group based on whether we're adsing or not.
-	const WeaponFireModeConfig& GetFireModeConfig(bool bADS) const { return bADS ? ADSConfig : HipConfig; }
-	WeaponFireModeConfig& GetFireModeConfig(bool bADS) { return bADS ? ADSConfig : HipConfig; }
+	const WeaponFireModeConfig& GetFireModeConfig(int Type) const { return FireModeConfigs[Type]; }
+	WeaponFireModeConfig& GetFireModeConfig(int Type) { return FireModeConfigs[Type]; }
 
 	virtual void Serialize(bool bSerializing, nlohmann::json& Json) override;
 
-	WeaponFireGroupConfig() : HipConfig(), ADSConfig() {}
+	WeaponFireGroupConfig() 
+	{
+		//add at least one.
+		FireModeConfigs.push_back(WeaponFireModeConfig());
+	}
 };
 
 struct WeaponConfig
 	: public SerializerInterface
 {
+	//Usually only one of these. Sometimes there can be more,
+	//if a weapon has a different fire mode (eg full auto vs burst)
 	std::vector<WeaponFireGroupConfig> FireGroups;
 
 	//Number of bullets the magazine holds.
@@ -190,41 +192,3 @@ struct Countdown
 		}
 	}
 };
-
-//For storing weapon state based off of the weapon config.
-struct WeaponConfigState
-{
-	//The static configuration of the weapon.
-	WeaponConfig* Config = nullptr;
-
-	//This determines whether the user has let go of LMB after pressing it,
-	//allowing the next burst to occur (for burst weapons)
-	bool bHasUnlatched = true;
-	//Whether the player pressed the reload button.
-	bool bIsReloading = false;
-
-	int CurrentBullets = 0;
-	int ShotsLeftInBurst = 0; // 0 means it is not going to fire yet.
-
-	float CurrentCOF = 0.f;
-
-	//The current fire group in the FireGroup array. Usually 0.
-	int CurrentFireGroup = 0;
-
-	Countdown<float> TimeToNextFire;//Amount of time before the next fire is available.
-	Countdown<float> TimeToRecovery;//The amount of time until recovery starts. Usually zero, but is reset whenever lmb is held.
-	Countdown<float> DelayBeforeFiring;//The amount of time until we can fire for weapons with delays before firing.
-	Countdown<float> TimeToReload;//Amount of time until reload completed...
-
-	//Outputs the current zoom level for adjustment of AngleToPixel calc
-	float Tick(float DeltaTime, 
-		bool bTryingToFiring, 
-		bool bMoving, 
-		bool bIsCrouched, 
-		bool bIsADSed, 
-		bool bReloadPressed);
-
-	//Time in miliseconds between shots.
-	//float GetRefireTime(bool bIsADS) const { return 1000. / (Config.GetInnerConfig(bIsADS).ROF / 60.); }
-};
-
