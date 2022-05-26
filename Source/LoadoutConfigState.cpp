@@ -10,13 +10,8 @@ float WeaponConfigState::Tick(
 	bool bIsADSed,
 	bool bReloadPressed)
 {
-	if (!Config)
-	{
-		return 1.f;
-	}
-
 	//Get configuration
-	const WeaponFireGroupConfig& CurrentFireGroupConfig = Config->GetFireGroupConfig(CurrentFireGroup);
+	const WeaponFireGroupConfig& CurrentFireGroupConfig = Config.GetFireGroupConfig(CurrentFireGroup);
 	const WeaponFireModeConfig& CurrentFireModeConfig = CurrentFireGroupConfig.GetFireModeConfig(bIsADSed);
 	const WeaponConeConfig& CurrentConeConfig = CurrentFireModeConfig.GetConeConfig(bMoving, bIsCrouched);
 
@@ -27,10 +22,10 @@ float WeaponConfigState::Tick(
 
 	//Initiate reload.
 	if (bReloadPressed
-		&& CurrentBullets < Config->MagSize
+		&& CurrentBullets < Config.MagSize
 		&& ShotsLeftInBurst == 0)//Can only reload when not firing.
 	{
-		TimeToReload.Set(CurrentBullets ? Config->ReloadTimeShort : Config->ReloadTimeLong);
+		TimeToReload.Set(CurrentBullets ? Config.ReloadTimeShort : Config.ReloadTimeLong);
 		bIsReloading = true;
 	}
 
@@ -39,7 +34,7 @@ float WeaponConfigState::Tick(
 	{
 		//Currently don't really care about setting up cutting by ammo reserve. 
 		//Not really worth coding atm. TODO later.
-		CurrentBullets = Config->MagSize;
+		CurrentBullets = Config.MagSize;
 		bIsReloading = false;
 	}
 
@@ -138,10 +133,14 @@ void WeaponConfigState::WeaponSwitchedOff()
 	//This might be a point where bugs could occur in weapon switching due to frame timings.
 	if (bIsReloading && !TimeToReload.Completed())//If was actively reloading
 	{
-		TimeToReload.Set(CurrentBullets ? Config->ReloadTimeShort : Config->ReloadTimeLong);
+		TimeToReload.Set(CurrentBullets ? 0.f : Config.ReloadTimeLong);
 	}
 }
 
+void WeaponConfigState::Serialize(bool bSerializing, nlohmann::json& TargetJson)
+{
+	Config.Serialize(bSerializing, TargetJson);
+}
 
 /* from WinUser.h L#532
  * VK_0 - VK_9 are the same as ASCII '0' - '9' (0x30 - 0x39)
@@ -197,26 +196,9 @@ bool IsCrouching()
 	return bCPressed;
 }
 
-void LoadoutConfig::Serialize(bool bSerializing, nlohmann::json& TargetJson)
-{
-	JSON_SERIALIZE_ARRAY(TargetJson, bSerializing, LoadoutSlot_Primaries, std::string);
-	JSON_SERIALIZE_ARRAY(TargetJson, bSerializing, LoadoutSlot_Secondaries, std::string);
-}
-
-XDynamicArray<WeaponConfigState> LoadoutConfig::CreateWeaponConfigStates(bool bSecondaries) const
-{
-	XDynamicArray<WeaponConfigState> Out;
-
-	//Out.Add()
-
-	return Out;
-}
-
 float LoadoutConfigState::Tick(float DeltaTime)
 {
-	if (WeaponConfigStates_Primaries.Num()
-		|| WeaponConfigStates_Secondaries.Num()
-		|| CurEq == -1)// if -1, that means no weapon is equipped.
+	if (WeaponConfigStates_Primaries.size() == 0 || CurEq == -1)// if -1, that means no weapon is equipped.
 	{
 		//Not yet initialized.
 		return 1.f;
@@ -224,24 +206,49 @@ float LoadoutConfigState::Tick(float DeltaTime)
 
 	MaybeSwitchWeapon();
 
-	XDynamicArray<WeaponConfigState>& CurrentArray = bIsSecondary ? WeaponConfigStates_Primaries : WeaponConfigStates_Secondaries;
+	TimeBeforeFrom.Tick(DeltaTime);
+	if (TimeBeforeFrom.Completed())
+	{
+		TimeBeforeTo.Tick(DeltaTime);
+	}
+
+	std::vector<WeaponConfigState>& CurrentArray = bIsSecondary ? WeaponConfigStates_Primaries : WeaponConfigStates_Secondaries;
 
 	WeaponConfigState& CurWeaponPtr = CurrentArray[CurEq];
 
-	//Process inputs.
-
 	const bool bMoving = IsMoving();
-	const bool bFiring = GetAsyncKeyState(0x01);//LMB
-	const bool bIsADSed = GetAsyncKeyState(0x02);//RMB
-	const bool bIsReloadPressed = GetAsyncKeyState(0x52) || GetAsyncKeyState(0x72); //R/r
 	const bool bIsCrouched = IsCrouching();//crouch
-	const bool bIsSprinting = GetAsyncKeyState(VK_SHIFT);//sprint doesn't really matter rn
+	//const bool bIsSprinting = GetAsyncKeyState(VK_SHIFT);//sprint doesn't really matter rn
 
-	CurWeaponPtr.Tick(DeltaTime, bFiring, bMoving, bIsCrouched, bIsADSed, bIsReloadPressed);
+	//Process inputs.
+	if (IsSwitching())
+	{
+		CurWeaponPtr.Tick(DeltaTime, false, bMoving, bIsCrouched, false, false);
+	}
+	else
+	{
+		//These actions are only allowed while not switching
+		const bool bFiring = GetAsyncKeyState(0x01);//LMB
+		const bool bIsADSed = GetAsyncKeyState(0x02);//RMB
+		const bool bIsReloadPressed = GetAsyncKeyState(0x52) || GetAsyncKeyState(0x72); //R/r
+
+		CurWeaponPtr.Tick(DeltaTime, bFiring, bMoving, bIsCrouched, bIsADSed, bIsReloadPressed);
+	}
 }
 
-//When switching from secondary immediately to primary, always set bIsSecondary to complete false.
-#define LOADOUT_SWITCH_HELPER(Number) 	 
+void LoadoutConfigState::SetSwitching(float FromTime, float ToTime)
+{
+	if (IsSwitching())
+	{
+		//Only allow switching while 
+		TimeBeforeTo.Set(ToTime);
+	}
+	else
+	{
+		TimeBeforeFrom.Set(FromTime);
+		TimeBeforeTo.Set(ToTime);
+	}
+}
 
 //idk if want to use this code.
 void LoadoutConfigState::MaybeSwitchWeapon()
@@ -249,22 +256,40 @@ void LoadoutConfigState::MaybeSwitchWeapon()
 	int Previous_Item = -1;
 	bool Previous_bIsSecondary = false;
 
+	bool bDidSwitch = false;
+
 	//Weapon switching.
 	if (GetAsyncKeyState(0x31))//1 key
 	{
-		WeaponSwitchHelper(1, Previous_Item, Previous_bIsSecondary);
+		bDidSwitch = WeaponSwitchHelper(0, Previous_Item, Previous_bIsSecondary);
 	}
 	else if (GetAsyncKeyState(0x32))//2 key
 	{
-		WeaponSwitchHelper(2, Previous_Item, Previous_bIsSecondary);
+		bDidSwitch = WeaponSwitchHelper(1, Previous_Item, Previous_bIsSecondary);
 	}
 	else if (GetAsyncKeyState(0x33))//3 key
 	{
-		WeaponSwitchHelper(3, Previous_Item, Previous_bIsSecondary);
+		bDidSwitch = WeaponSwitchHelper(2, Previous_Item, Previous_bIsSecondary);
 	}
 	else
 	{
-		WeaponSwitchHelper(-1, Previous_Item, Previous_bIsSecondary);
+		bDidSwitch = WeaponSwitchHelper(-1, Previous_Item, Previous_bIsSecondary);
+	}
+
+	if (bDidSwitch)
+	{
+		//For secondary (grenade launchers) swaps, only take into account the to time.
+		const bool bWasSecondarySwap = Previous_bIsSecondary != bIsSecondary && Previous_Item == CurEq;
+
+		WeaponConfigState& Prev = GetWeaponConfigState(Previous_Item, Previous_bIsSecondary);
+		WeaponConfigState& New = GetWeaponConfigState(CurEq, bIsSecondary);
+
+		const float& FromTime = Prev.Config.TransitionFromTime;
+		const float& ToTime = New.Config.TransitionToTime;
+
+		SetSwitching(bWasSecondarySwap ? FromTime : 0.f, ToTime);
+
+		Prev.WeaponSwitchedOff();
 	}
 }
 
@@ -272,20 +297,28 @@ bool LoadoutConfigState::WeaponSwitchHelper(int NewNumber, int& Previous_Item, b
 {
 	if (CurEq == NewNumber)
 	{
-		if (WeaponConfigStates_Secondaries.IsValidIndex(NewNumber))
+		if (WeaponConfigStates_Secondaries.size() > NewNumber)
 		{
 			//Only allow equip if it's capable
 			Previous_Item = CurEq;
 			Previous_bIsSecondary = bIsSecondary;
 			bIsSecondary = !bIsSecondary;
+			return true;
 		}
 	}
-	else
+	else if (WeaponConfigStates_Primaries.size() > NewNumber)
 	{
-		//if (WeaponConfigStates_Primaries[]
 		Previous_Item = CurEq;
 		Previous_bIsSecondary = false;
 		CurEq = NewNumber;
 		bIsSecondary = false;
+		return true;
 	}
+	return false;
+}
+
+void LoadoutConfigState::Serialize(bool bSerializing, nlohmann::json& TargetJson)
+{
+	JSON_SERIALIZE_OBJECT_ARRAY(TargetJson, bSerializing, WeaponConfigStates_Primaries, WeaponConfigState);
+	JSON_SERIALIZE_OBJECT_ARRAY(TargetJson, bSerializing, WeaponConfigStates_Secondaries, WeaponConfigState);
 }

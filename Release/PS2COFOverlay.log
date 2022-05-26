@@ -1,7 +1,18 @@
-﻿  UserSettings.cpp
+﻿  PS2COFOverlay.cpp
+  DataLoader.cpp
+  LoadoutConfigState.cpp
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\LoadoutConfigState.cpp(110,58): warning C4244: 'argument': conversion from 'double' to 'ValueType', possible loss of data
+          with
+          [
+              ValueType=float
+          ]
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\LoadoutConfigState.cpp(300,45): warning C4018: '>': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\LoadoutConfigState.cpp(309,47): warning C4018: '>': signed/unsigned mismatch
+  UserSettings.cpp
+  WeaponConfig.cpp
   Generating code
-  82 of 2796 functions ( 2.9%) were compiled, the rest were copied from previous compilation.
-    0 functions were new in current compilation
-    18 functions had inline decision re-evaluated but remain unchanged
+  161 of 3034 functions ( 5.3%) were compiled, the rest were copied from previous compilation.
+    10 functions were new in current compilation
+    98 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   PS2COFOverlay.vcxproj -> C:\Users\ColRem\source\repos\PS2COFOverlay\Release\PS2COFOverlay.exe

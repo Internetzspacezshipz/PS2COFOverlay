@@ -82,14 +82,13 @@ struct SerializerInterface
 
 
 //CONST FOLDER LOCATIONS
-const boost::filesystem::path UseSettingsFileName = "Settings.json";
+const boost::filesystem::path UseSettingsFileName = "Settings";
 
 const boost::filesystem::path SettingsSubFolder = "Settings";
-const boost::filesystem::path WeaponsSubFolder = "Weapons";
-const boost::filesystem::path LoadoutsSubFolder = "Loadouts";
+const boost::filesystem::path WeaponsSubFolder = "Settings/Weapons";
+const boost::filesystem::path LoadoutsSubFolder = "Settings/Loadouts";
 
-const std::string BaseLoadoutName = "Loadout_";
-const std::string BaseWeaponName = "Weapon_";
+const std::string FileExtension = ".json";
 
 //You're never gonna believe what this class does.
 class DataLoader
@@ -102,8 +101,14 @@ class DataLoader
 	nlohmann::json LoadFileToJson(boost::filesystem::path Path) const;
 	bool SaveJsonToFile(boost::filesystem::path Path, const nlohmann::json& Json) const;
 
-public:
 	DataLoader();
+public:
+
+	static DataLoader& Get()
+	{
+		static DataLoader DL = DataLoader();
+		return DL;
+	}
 
 	nlohmann::json LoadUserSettings() const;
 	nlohmann::json LoadWeaponJson(const std::string& WeaponName) const;

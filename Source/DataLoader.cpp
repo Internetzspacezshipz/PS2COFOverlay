@@ -9,6 +9,7 @@
 
 nlohmann::json DataLoader::LoadFileToJson(boost::filesystem::path Path) const
 {
+	Path += FileExtension;
 	boost::filesystem::ifstream File;
 	File.open(Path, std::ios_base::in);
 	if (!File.is_open() || File.fail())
@@ -27,14 +28,14 @@ nlohmann::json DataLoader::LoadFileToJson(boost::filesystem::path Path) const
 
 bool DataLoader::SaveJsonToFile(boost::filesystem::path Path, const nlohmann::json& InJson) const
 {
-	boost::filesystem::ofstream File(Path, std::ios_base::out);
+	boost::filesystem::ofstream File(Path += FileExtension, std::ios_base::out);
 	if (!File.is_open() || File.fail())
 	{
 		return false;
 	}
 	File << InJson;
 	File.close();
-	return File.fail();
+	return !File.fail();
 }
 
 DataLoader::DataLoader() :

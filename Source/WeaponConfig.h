@@ -3,7 +3,6 @@
 //JSON INCL
 #include "../Ext/Json/json.hpp"
 #include "DataLoader.h"
-#include "../Ext/boost_1_79_0/boost/scoped_array.hpp"
 
 //https://liquidwarp.honu.pw/stats/weapons/infantry/nsx-naginata-804249.html
 struct WeaponConeConfig 
@@ -13,7 +12,8 @@ struct WeaponConeConfig
 	float Maximum;
 
 	//Others
-	//TODO: use this.
+	//TODO: use this in shotgun type weapons
+	//(perhaps Tengu to add a second set of crosshairs for expected pellet spread)
 	float PelletSpread;
 
 	float Bloom;
@@ -94,24 +94,24 @@ struct WeaponFireModeConfig
 	//Set to true for allowing it to cancel, and false for disallowing cancels (Yumi)
 	bool bAllowsFireCancel = true;
 
-	const WeaponConeConfig& GetConeConfig(bool bMoving, bool bCrouching) const
-	{ 
-		return bCrouching ? 
-			bMoving ? CrouchingMove : Crouching : 
-			bMoving ? StandingMove : Standing ;
-	}
-
-	WeaponConeConfig& GetConeConfig(bool bMoving, bool bCrouching)
-	{ 
-		return bCrouching ?
-			bMoving ? CrouchingMove : Crouching :
-			bMoving ? StandingMove : Standing ;
-	}
-
 	WeaponConeConfig Standing;
 	WeaponConeConfig Crouching;
 	WeaponConeConfig StandingMove; //Known as 'running' cone of fire in the https://liquidwarp.honu.pw/ website.
 	WeaponConeConfig CrouchingMove;
+
+	const WeaponConeConfig& GetConeConfig(bool bMoving, bool bCrouching) const
+	{
+		return bCrouching ?
+			bMoving ? CrouchingMove : Crouching :
+			bMoving ? StandingMove : Standing;
+	}
+
+	WeaponConeConfig& GetConeConfig(bool bMoving, bool bCrouching)
+	{
+		return bCrouching ?
+			bMoving ? CrouchingMove : Crouching :
+			bMoving ? StandingMove : Standing;
+	}
 
 	virtual void Serialize(bool bSerializing, nlohmann::json& Json) override;
 };
@@ -122,7 +122,11 @@ struct WeaponFireModeConfig
 struct WeaponFireGroupConfig
 	: public SerializerInterface
 {
+	std::string FireGroupName;
+
 	std::vector<WeaponFireModeConfig> FireModeConfigs;
+
+	float FireModeSwitchTime;
 
 	//Gets the inner configuration of the current fire group based on whether we're adsing or not.
 	const WeaponFireModeConfig& GetFireModeConfig(int Type) const { return FireModeConfigs[Type]; }
@@ -140,8 +144,11 @@ struct WeaponFireGroupConfig
 struct WeaponConfig
 	: public SerializerInterface
 {
+	//Weapon config used to save this
+	std::string Name;
+
 	//Usually only one of these. Sometimes there can be more,
-	//if a weapon has a different fire mode (eg full auto vs burst)
+	//if a weapon has a different fire group (burst fire vs semi vs UBGL)
 	std::vector<WeaponFireGroupConfig> FireGroups;
 
 	//Number of bullets the magazine holds.
@@ -153,6 +160,11 @@ struct WeaponConfig
 	//Long reload (empty magazine reload) in seconds
 	float ReloadTimeLong;
 
+	//Amount of time it takes to go from or to this weapon
+	//GL is 500,500 for example.
+	float TransitionToTime;
+	float TransitionFromTime;
+
 	//Ensure you only use these after making the FireGroups array.
 	const WeaponFireGroupConfig& GetFireGroupConfig(int Index) const { return FireGroups[Index]; }
 	WeaponFireGroupConfig& GetFireGroupConfig(int Index) { return FireGroups[Index]; }
@@ -163,32 +175,11 @@ struct WeaponConfig
 		FireGroups(),
 		MagSize(0),
 		ReloadTimeLong(0.f),
-		ReloadTimeShort(0.f)
+		ReloadTimeShort(0.f),
+		TransitionToTime(0.f),
+		TransitionFromTime(0.25f)//regular transition time is 250ms
 	{
 		//add at least one.
 		FireGroups.push_back(WeaponFireGroupConfig());
 	};
-};
-
-//Countdown state system
-template<typename ValueType>
-struct Countdown
-{
-	ValueType TimeUntilCompleted = 0;
-
-	ValueType Val() const { return TimeUntilCompleted; }
-	bool Completed() const { return TimeUntilCompleted <= 0; }
-
-	void Set(ValueType Time)
-	{
-		TimeUntilCompleted = Time;
-	}
-
-	void Tick(ValueType ReduceBy)
-	{
-		if (TimeUntilCompleted > 0)
-		{
-			TimeUntilCompleted -= ReduceBy;
-		}
-	}
 };

@@ -94,6 +94,16 @@ public:
 		return Data[index];
 	}
 
+	Type& begin()
+	{
+		return Data[0];
+	}
+
+	Type& end()
+	{
+		return Data[Size];
+	}
+
 private:
 	//Maybe downsizes
 	void MaybeResize()
@@ -106,7 +116,7 @@ private:
 
 	void Resize(int newSize)
 	{
-		int* temp;
+		Type* temp;
 		temp = new Type[newSize + Slack];
 		for (int i = 0; i < newSize; i++)
 		{

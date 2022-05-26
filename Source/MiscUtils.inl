@@ -18,5 +18,28 @@ namespace MiscUtils
 		horizontal = desktop.right;
 		vertical = desktop.bottom;
 	}
+
+	//Countdown state system
+	template<typename ValueType>
+	struct Countdown
+	{
+		ValueType TimeUntilCompleted = 0;
+
+		ValueType Val() const { return TimeUntilCompleted; }
+		bool Completed() const { return TimeUntilCompleted <= 0; }
+
+		void Set(ValueType Time)
+		{
+			TimeUntilCompleted = Time;
+		}
+
+		void Tick(ValueType ReduceBy)
+		{
+			if (TimeUntilCompleted > 0)
+			{
+				TimeUntilCompleted -= ReduceBy;
+			}
+		}
+	};
 }
 

@@ -1,8 +1,6 @@
 #include <cmath>
 #include "WeaponConfig.h"
 
-using namespace nlohmann;
-
 //Yucky copy pasta
 void WeaponConeConfig::Serialize(bool bSerializing, nlohmann::json& Json)
 {
@@ -38,13 +36,19 @@ void WeaponFireModeConfig::Serialize(bool bSerializing, nlohmann::json& Json)
 
 void WeaponFireGroupConfig::Serialize(bool bSerializing, nlohmann::json& Json)
 {
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, FireGroupName);
 	JSON_SERIALIZE_OBJECT_ARRAY(Json, bSerializing, FireModeConfigs, WeaponFireModeConfig);
 }
 
 void WeaponConfig::Serialize(bool bSerializing, nlohmann::json& Json)
 {
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, Name);
 	JSON_SERIALIZE_OBJECT_ARRAY(Json, bSerializing, FireGroups, WeaponFireGroupConfig);
 	JSON_SERIALIZE_VARIABLE(Json, bSerializing, MagSize);
+
 	JSON_SERIALIZE_VARIABLE(Json, bSerializing, ReloadTimeShort);
 	JSON_SERIALIZE_VARIABLE(Json, bSerializing, ReloadTimeLong);
+
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, TransitionToTime);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, TransitionFromTime);
 }

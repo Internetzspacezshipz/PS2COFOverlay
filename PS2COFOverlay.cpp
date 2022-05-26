@@ -48,10 +48,7 @@ float FOV = 74.f;
 bool bToggleCrouch = true;
 
 bool bMenuOpen = false;
-
-boost::shared_ptr<DataLoader> DataLoaderObject;
-boost::shared_ptr<UserSettings> UserSettingsObject;
-boost::shared_ptr<LoadoutConfigState> LoadoutConfigStateObject;
+bool bNoDraw = false;
 
 float CurrentCOF_ZoomAdjusted;//temp for garbage
 
@@ -110,6 +107,49 @@ void InitGUI(D3DDeviceType* Device, HWND* TargetHWND)
 	ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Arial.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 }
 
+void LoadUserSettings()
+{
+	UserSettings& UserSettingsObject = UserSettings::Get();
+	DataLoader& DataLoaderObject = DataLoader::Get();
+
+	nlohmann::json UserSettingsJson = DataLoaderObject.LoadUserSettings();
+
+	if (UserSettingsJson.empty())
+	{
+		//Write empty object
+		UserSettingsObject.Serialize(true, UserSettingsJson);
+		if (!DataLoaderObject.SaveUserSettings(UserSettingsJson))
+		{
+			exit(1);
+		}
+	}
+
+	UserSettingsObject.Serialize(false, UserSettingsJson);
+}
+
+LoadoutConfigState LoadLoadout(std::string LoadoutName)
+{
+	LoadoutConfigState LoadoutConfigStateObject;
+	{
+		DataLoader& DataLoaderObject = DataLoader::Get();
+
+		nlohmann::json LoadoutJson = DataLoaderObject.LoadUserLoadoutConfig(LoadoutName);
+
+		if (LoadoutJson.empty())
+		{
+			LoadoutConfigStateObject.Serialize(true, LoadoutJson);
+			if (!DataLoaderObject.SaveUserLoadoutConfig(LoadoutName, LoadoutJson))
+			{
+				exit(1);
+			}
+		}
+
+		LoadoutConfigStateObject.Serialize(false, LoadoutJson);
+	}
+	//copy but I don't care.
+	return LoadoutConfigStateObject;
+}
+
 // Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
@@ -148,28 +188,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	SetWindowPos(overlayHWND, HWND_TOPMOST, 0, 0, width, height, 0);
 
-	DataLoaderObject = boost::shared_ptr<DataLoader>(new DataLoader());
-	UserSettingsObject = boost::shared_ptr<UserSettings>(new UserSettings());
 
-	nlohmann::json UserSettingsJson = DataLoaderObject->LoadUserSettings();
 
-	if (UserSettingsJson.empty())
-	{
-		//Write empty object
-		UserSettingsObject->Serialize(true, UserSettingsJson);
-		if (DataLoaderObject->SaveUserSettings(UserSettingsJson))
-		{
-			exit(1);
-		}
-	}
+	//Load user settings.
+	LoadUserSettings();
 
-	UserSettingsObject->Serialize(false, UserSettingsJson);
+	const std::string BaseLoadoutName = "BaseLoadout";
 
-	/*
-	LoadoutConfig InLoadoutConfig;
-	InLoadoutConfig.Serialize(false, );
-	LoadoutConfigStateObject = boost::shared_ptr<LoadoutConfigState>(new LoadoutConfigState(InLoadoutConfig));
-	*/
+	//Load initial loadout configuration.
+	LoadoutConfigState LoadoutConfigStateObject = LoadLoadout(BaseLoadoutName);
 
     // Main message loop:
 	clock_t LastTick = 0;
@@ -204,6 +231,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			break;
 		}
 
+		if (GetAsyncKeyState(VK_F6))//no draw key
+		{
+			//lazy
+			Sleep(100);
+
+			bNoDraw = !bNoDraw;
+		}
 
 		const float CurrentZoom = 1.f;//CurrentState.Tick(DeltaTime, bFiring, bMoving, bIsCrouched, bIsADSed, bIsReloadPressed);
 
@@ -225,6 +259,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	UnhookWindowsHookEx(MouseHook);
 	UnregisterClass(Title, hInstance);
+
+	nlohmann::json SavedUserSettingsJson;
+	UserSettings::Get().Serialize(true, SavedUserSettingsJson);
+	DataLoader::Get().SaveUserSettings(SavedUserSettingsJson);
 
     return (int) msg.wParam;
 }
@@ -337,10 +375,12 @@ void Draw()
 		if (bMenuOpen)
 		{
 			ImGui::Begin("Test", &bMenuOpen);
-			ImGui::SetWindowSize({ 500.f, 1000.f });
 
 			//TEST SHIT.
-			ImGui::Button("ButtonName", ImVec2(500, 500));
+			if (ImGui::Button("Save Loadout", ImVec2(50, 20)))
+			{
+				
+			}
 			ImGui::Text("WHATEVER TEST SHIT THIS IS");
 
 			ImGui::End();
@@ -349,8 +389,11 @@ void Draw()
 
 		ImGui::EndFrame();
 
-		//RENDER CROSSHARIR
-		PaintObject->Render(CurrentCOF_ZoomAdjusted, nullptr/*(char*)&calls*/);
+		if (!bNoDraw)
+		{
+			//RENDER CROSSHARIR
+			PaintObject->Render(CurrentCOF_ZoomAdjusted, nullptr/*(char*)&calls*/);
+		}
 
 		ImGui::Render();
 
