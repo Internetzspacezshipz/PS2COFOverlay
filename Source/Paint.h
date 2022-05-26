@@ -52,7 +52,7 @@ class Paint
 public:
 	void Start();
 	void End();
-	void Render(float CurrentCOF, char* test);
+	void Render(float CurrentCOF);
 
 	//Unused currently. Might be needed if any issues with dragging
 	void Clear();

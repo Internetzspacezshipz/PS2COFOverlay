@@ -5,16 +5,23 @@
 
 //Proj incl
 #include "WeaponConfig.h"
-#include "XDynamicArray.h"
 #include "MiscUtils.inl"
 
+//Output of Ticking functions
+struct TickOutput
+{
+	float CurrentZoom;
+	float CurrentConeOfFire;
+};
 
 //For storing weapon state based off of the weapon config.
 struct WeaponConfigState
 	: public SerializerInterface
 {
 	//The static configuration of the weapon.
-	WeaponConfig Config;
+	boost::shared_ptr<WeaponConfig> Config;
+
+	std::string WeaponName;
 
 	//This determines whether the user has let go of LMB after pressing it,
 	//allowing the next burst to occur (for burst weapons)
@@ -36,7 +43,7 @@ struct WeaponConfigState
 	MiscUtils::Countdown<float> TimeToReload;//Amount of time until reload completed...
 
 	//Outputs the current zoom level for adjustment of AngleToPixel calc
-	float Tick(
+	TickOutput Tick(
 		float DeltaTime,
 		bool bTryingToFiring,
 		bool bMoving,
@@ -47,6 +54,9 @@ struct WeaponConfigState
 	//Call when the weapon was switched off of, which will cause this weapon to reset certain countdowns (reload)
 	void WeaponSwitchedOff();
 
+	//Creates and loads Config according to the WeaponName
+	bool LoadWeaponConfig();
+
 	//Time in miliseconds between shots.
 	//float GetRefireTime(bool bIsADS) const { return 1000. / (Config.GetInnerConfig(bIsADS).ROF / 60.); }
 	virtual void Serialize(bool bSerializing, nlohmann::json& TargetJson) override;
@@ -55,6 +65,8 @@ struct WeaponConfigState
 struct LoadoutConfigState
 	: public SerializerInterface
 {
+	std::string LoadoutName;
+
 	//Somewhat complex, this is a 2d array of weapon config states.
 	//the first dimension is for when you switch to another actual weapon,
 	//the second is for a secondary type of weapon in the same slot (eg underbarrel grenade launchers or shotguns)
@@ -62,7 +74,7 @@ struct LoadoutConfigState
 	std::vector<WeaponConfigState> WeaponConfigStates_Secondaries;
 
 	//The index of the above array in which our current weapon is.
-	int CurEq = 0;
+	int CurEq = -1;
 	bool bIsSecondary = false;
 
 	MiscUtils::Countdown<float> TimeBeforeFrom;//Amount of time until weapon has been switched off of
@@ -73,7 +85,7 @@ struct LoadoutConfigState
 
 	//Handles weapon inputs.
 	//Outputs the current zoom level.
-	float Tick(float DeltaTime);
+	TickOutput Tick(float DeltaTime);
 
 	void MaybeSwitchWeapon();
 

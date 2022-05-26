@@ -92,17 +92,10 @@ void Paint::End()
 #endif
 }
 
-void Paint::Render(float CurrentCOF, char* test)
+void Paint::Render(float CurrentCOF)
 {
-	//if (TargetHWND == GetForegroundWindow())
-	{
-		//todo: add range gradiation system
-		DrawCrosshairs(CurrentCOF, PipLength, PipWidth, CrosshairColor);
-		if (test)
-		{
-			PDrawText(test, Width / 2, Height / 2, 255, 255, 255, 127);
-		}
-	}
+	//todo: add range gradiation system
+	DrawCrosshairs(CurrentCOF, PipLength, PipWidth, CrosshairColor);
 }
 
 void Paint::Clear()

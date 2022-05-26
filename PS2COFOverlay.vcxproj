@@ -159,6 +159,7 @@
     <ClInclude Include="Ext\imgui\imgui_impl_dx9.h" />
     <ClInclude Include="Ext\imgui\imgui_impl_win32.h" />
     <ClInclude Include="Ext\imgui\imgui_internal.h" />
+    <ClInclude Include="Ext\imgui\imgui_stdlib.h" />
     <ClInclude Include="Ext\imgui\imstb_rectpack.h" />
     <ClInclude Include="Ext\imgui\imstb_textedit.h" />
     <ClInclude Include="Ext\imgui\imstb_truetype.h" />
@@ -208,7 +209,7 @@
     <ClInclude Include="PS2COFOverlay.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Source\DataLoader.h" />
-    <ClInclude Include="Source\XDynamicArray.h" />
+    <ClInclude Include="Source\UserInterface.h" />
     <ClInclude Include="Source\LoadoutConfigState.h" />
     <ClInclude Include="Source\Paint.h" />
     <ClInclude Include="Source\UserSettings.h" />
@@ -223,12 +224,14 @@
     <ClCompile Include="Ext\imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="Ext\imgui\imgui_impl_dx9.cpp" />
     <ClCompile Include="Ext\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="Ext\imgui\imgui_stdlib.cpp" />
     <ClCompile Include="Ext\imgui\imgui_tables.cpp" />
     <ClCompile Include="Ext\imgui\imgui_widgets.cpp" />
     <ClCompile Include="PS2COFOverlay.cpp" />
     <ClCompile Include="Source\DataLoader.cpp" />
     <ClCompile Include="Source\LoadoutConfigState.cpp" />
     <ClCompile Include="Source\Paint.cpp" />
+    <ClCompile Include="Source\UserInterface.cpp" />
     <ClCompile Include="Source\UserSettings.cpp" />
     <ClCompile Include="Source\WeaponConfig.cpp" />
   </ItemGroup>

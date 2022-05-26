@@ -26,6 +26,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 #include "Source/LoadoutConfigState.h"
 #include "Source/DataLoader.h"
 #include "Source/UserSettings.h"
+#include "Source/UserInterface.h"
 
 //Misc includes
 #include "Source/MiscUtils.inl"
@@ -41,16 +42,12 @@ WCHAR Title[100] = L"Overlay";                  // The title bar text
 int width, height;
 HWND overlayHWND;
 Paint* PaintObject = nullptr;
+bool bNoDraw = false;
 
 //Planetside uses vertical FOV.
 //TODO: put player settings in a separate place
-float FOV = 74.f;
-bool bToggleCrouch = true;
 
-bool bMenuOpen = false;
-bool bNoDraw = false;
-
-float CurrentCOF_ZoomAdjusted;//temp for garbage
+LoadoutConfigState LoadoutConfigStateObject;
 
 /*Hooking*/
 //idk why these are two different vars. TODO: check this
@@ -58,7 +55,7 @@ HHOOK hMouseHook;
 HHOOK MouseHook;
 LRESULT CALLBACK mouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-	if (bMenuOpen) // bool
+	if (UserInterface::Get().bMenuOpen) // bool
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		MOUSEHOOKSTRUCT* pMouseStruct = (MOUSEHOOKSTRUCT*)lParam;
@@ -145,6 +142,7 @@ LoadoutConfigState LoadLoadout(std::string LoadoutName)
 		}
 
 		LoadoutConfigStateObject.Serialize(false, LoadoutJson);
+		LoadoutConfigStateObject.LoadoutName = LoadoutName;
 	}
 	//copy but I don't care.
 	return LoadoutConfigStateObject;
@@ -155,7 +153,7 @@ ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-void			    Draw();
+void			    Draw(float CrosshairSize);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -196,7 +194,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	const std::string BaseLoadoutName = "BaseLoadout";
 
 	//Load initial loadout configuration.
-	LoadoutConfigState LoadoutConfigStateObject = LoadLoadout(BaseLoadoutName);
+	LoadoutConfigStateObject = LoadLoadout(BaseLoadoutName);
 
     // Main message loop:
 	clock_t LastTick = 0;
@@ -209,7 +207,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		if (GetAsyncKeyState(VK_F3))//open menu
 		{
-			bMenuOpen = !bMenuOpen;
+			bool bMenuOpen = UserInterface::Get().ToggleMenuOpen();
 			//lazy
 			Sleep(100);
 			if (bMenuOpen)
@@ -239,15 +237,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			bNoDraw = !bNoDraw;
 		}
 
-		const float CurrentZoom = 1.f;//CurrentState.Tick(DeltaTime, bFiring, bMoving, bIsCrouched, bIsADSed, bIsReloadPressed);
+		float CurrentZoom = 1.f;
+
+		TickOutput TO = LoadoutConfigStateObject.Tick(DeltaTime);
 
 		//Simple conversion from angle to pixel size. Should be set in tick
-		const float AngleToPixel = height / (FOV / CurrentZoom);
+		const float AngleToPixel = height / (UserSettings::Get().FOV / TO.CurrentZoom);
 
 		//Max cone
-		//CurrentCOF_ZoomAdjusted = CurrentState.CurrentCOF * AngleToPixel;
-
-		Draw();
+		Draw(TO.CurrentConeOfFire * AngleToPixel);
 
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
@@ -360,7 +358,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-void Draw()
+void Draw(float CrosshairSize)
 {
 	if (PaintObject && ImGui::GetCurrentContext())
 	{
@@ -371,28 +369,15 @@ void Draw()
 
 		ImGui::NewFrame();
 
-		//UI GOES HERE
-		if (bMenuOpen)
-		{
-			ImGui::Begin("Test", &bMenuOpen);
-
-			//TEST SHIT.
-			if (ImGui::Button("Save Loadout", ImVec2(50, 20)))
-			{
-				
-			}
-			ImGui::Text("WHATEVER TEST SHIT THIS IS");
-
-			ImGui::End();
-		}
-
+		//Draw UI
+		UserInterface::Get().DrawUI(LoadoutConfigStateObject);
 
 		ImGui::EndFrame();
 
 		if (!bNoDraw)
 		{
 			//RENDER CROSSHARIR
-			PaintObject->Render(CurrentCOF_ZoomAdjusted, nullptr/*(char*)&calls*/);
+			PaintObject->Render(CrosshairSize);
 		}
 
 		ImGui::Render();
