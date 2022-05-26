@@ -31,73 +31,47 @@ else																		   \
 	VariableName.Serialize(bIsSerializing, InnerObject);					   \
 }
 
-#if  0
-if (bSerializing)
-{
-	nlohmann::json NewArray = nlohmann::json::array({});
-	for (auto& Elem : FireGroups)
-	{
-		nlohmann::json NewObject;
-		Elem.Serialize(bSerializing, NewObject);
-		NewArray.push_back(NewObject);
-	}
-	Json.emplace_back(json{ "ArrayName", NewArray });
-}
-else
-{
-	auto& InnerArray = Json.find("ArrayName").value();
-	for (auto& Elem : InnerArray)
-	{
-		WeaponFireGroupConfig NewSubObject;
-		NewSubObject.Serialize(bSerializing, Elem);
-		FireGroups.push_back(NewSubObject);
-	}
-}
-#endif
-
-//above ^^^^
-
-#define JSON_SERIALIZE_OBJECT_ARRAY(JsonVariable, bIsSerializing, ArrayName, ObjectType)\
-if (bIsSerializing)																  \
-{																				  \
-	nlohmann::json NewArray = nlohmann::json::array({});					\
-	for (auto& Elem : ArrayName)												  \
-	{																			  \
-		nlohmann::json NewObject;												  \
-		Elem.Serialize(bSerializing, NewObject);								  \
-		NewArray.push_back(NewObject);											  \
-	}																			  \
-	JsonVariable.emplace_back(nlohmann::json{ ""#ArrayName"", NewArray });		 \
-}																				  \
-else																			  \
-{																				  \
-	auto& InnerArray = JsonVariable.find(""#ArrayName"").value();				\
-	for (auto& Elem : InnerArray)												  \
-	{																			  \
-		ObjectType NewSubObject;												  \
-		NewSubObject.Serialize(bSerializing, Elem);								  \
-		ArrayName.push_back(NewSubObject);										  \
-	}																			  \
+#define JSON_SERIALIZE_OBJECT_ARRAY(JsonVariable, bIsSerializing, ArrayName, ObjectType)	\
+if (bIsSerializing)																			\
+{																							\
+	nlohmann::json NewArray = nlohmann::json::array({});								\
+	for (auto& Elem : ArrayName)															\
+	{																						\
+		nlohmann::json NewObject;															\
+		Elem.Serialize(bSerializing, NewObject);											\
+		NewArray.push_back(NewObject);														\
+	}																						\
+	JsonVariable[""#ArrayName""] = NewArray;												\
+}																							\
+else																						\
+{																							\
+	auto& InnerArray = JsonVariable[""#ArrayName""];										\
+	for (auto& Elem : InnerArray)															\
+	{																						\
+		ObjectType NewSubObject;															\
+		NewSubObject.Serialize(bSerializing, Elem);											\
+		ArrayName.push_back(NewSubObject);													\
+	}																						\
 }
 
 
-#define JSON_SERIALIZE_ARRAY(JsonVariable, bIsSerializing, ArrayName, ObjectType) \
-if (bIsSerializing)																  \
-{																				  \
-	nlohmann::json NewArray = nlohmann::json::array({});					  \
-	for (auto& Elem : ArrayName)												  \
-	{																			  \
-		NewArray.push_back(Elem);												  \
-	}																			  \
-	JsonVariable.emplace_back(nlohmann::json{ ""#ArrayName"", NewArray });				  \
-}																				  \
-else																			  \
-{																				  \
-	auto& InnerArray = JsonVariable.find(""#ArrayName"").value();						  \
-	for (auto& Elem : InnerArray)												  \
-	{																			  \
-		ArrayName.push_back(Elem);												  \
-	}																			  \
+#define JSON_SERIALIZE_ARRAY(JsonVariable, bIsSerializing, ArrayName, ObjectType)	\
+if (bIsSerializing)																	\
+{																					\
+	nlohmann::json NewArray = nlohmann::json::array({});						\
+	for (auto& Elem : ArrayName)													\
+	{																				\
+		NewArray.push_back(Elem);													\
+	}																				\
+	JsonVariable[""#ArrayName""] = NewArray;										\
+}																					\
+else																				\
+{																					\
+	auto& InnerArray = JsonVariable[""#ArrayName""];								\
+	for (auto& Elem : InnerArray)													\
+	{																				\
+		ArrayName.push_back(Elem);													\
+	}																				\
 }
 
 

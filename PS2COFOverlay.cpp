@@ -165,7 +165,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	UserSettingsObject->Serialize(false, UserSettingsJson);
 
-
 	/*
 	LoadoutConfig InLoadoutConfig;
 	InLoadoutConfig.Serialize(false, );
