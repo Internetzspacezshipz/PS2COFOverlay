@@ -155,11 +155,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	if (UserSettingsJson.empty())
 	{
-		//Write empty shit
+		//Write empty object
 		UserSettingsObject->Serialize(true, UserSettingsJson);
+		if (DataLoaderObject->SaveUserSettings(UserSettingsJson))
+		{
+			exit(1);
+		}
 	}
 
 	UserSettingsObject->Serialize(false, UserSettingsJson);
+
+
 	/*
 	LoadoutConfig InLoadoutConfig;
 	InLoadoutConfig.Serialize(false, );

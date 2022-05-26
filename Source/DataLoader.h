@@ -11,11 +11,11 @@
 #define JSON_SERIALIZE_VARIABLE(JsonVariable, bIsSerializing, VariableName)	   \
 if (bIsSerializing)															   \
 {																			   \
-	JsonVariable.push_back({ ""#VariableName"", VariableName});				   \
+	JsonVariable[""#VariableName""] = VariableName;							   \
 }																			   \
 else																		   \
 {																			   \
-	VariableName = JsonVariable.find(""#VariableName"").value();			   \
+	VariableName = JsonVariable[""#VariableName""];							   \
 }
 
 #define JSON_SERIALIZE_OBJECT(JsonVariable, bIsSerializing, VariableName)	   \
@@ -23,7 +23,7 @@ if (bIsSerializing)															   \
 {																			   \
 	nlohmann::json NewObject;												   \
 	VariableName.Serialize(bIsSerializing, NewObject);						   \
-	JsonVariable.push_back({ ""#VariableName"", NewObject});				   \
+	JsonVariable[""#VariableName""] = NewObject;							  \
 }																			   \
 else																		   \
 {																			   \
@@ -125,12 +125,17 @@ class DataLoader
 	boost::filesystem::path WeaponsFolderPath;
 	boost::filesystem::path LoadoutsFolderPath;
 
+	nlohmann::json LoadFileToJson(boost::filesystem::path Path) const;
+	bool SaveJsonToFile(boost::filesystem::path Path, const nlohmann::json& Json) const;
+
 public:
 	DataLoader();
-
-	nlohmann::json LoadFileToJson(boost::filesystem::path Path) const;
 
 	nlohmann::json LoadUserSettings() const;
 	nlohmann::json LoadWeaponJson(const std::string& WeaponName) const;
 	nlohmann::json LoadUserLoadoutConfig(const std::string& SpecifiedLoadout) const;
+
+	bool SaveUserSettings(nlohmann::json& InJson) const;
+	bool SaveWeaponJson(const std::string& WeaponName, nlohmann::json& InJson) const;
+	bool SaveUserLoadoutConfig(const std::string& SpecifiedLoadout, nlohmann::json& InJson) const;
 };
