@@ -37,11 +37,7 @@ class Paint
 	ID3DXFont* Font = nullptr;
 	ID3DXLine* Line = nullptr;
 
-	//Red by default
-	D3DCOLOR CrosshairColor = D3DCOLOR_ARGB(255, 255, 0, 0);
-
 	int Width, Height;
-
 
 	int Init(HWND hWND);
 	void PDrawText(char* String, int X, int Y, int A, int R, int G, int B);
@@ -57,16 +53,8 @@ public:
 	//Unused currently. Might be needed if any issues with dragging
 	void Clear();
 
-	int PipLength = 15;
-	int PipWidth = 2;
 
 	bool bDrawCenterDot = false;
-
-	//FLOATS ALL MUST BE 0-1 RANGE FOR THIS TO WORK PROPERLY.
-	void SetColor(float R, float G, float B, float A)
-	{
-		CrosshairColor = D3DCOLOR_COLORVALUE(R, G, B, A);
-	}
 
 	D3DDeviceType* GetDevice() const { return Device; };
 	D3DType* GetD3Object() const { return Object;  };

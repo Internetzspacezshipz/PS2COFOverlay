@@ -143,6 +143,7 @@ LoadoutConfigState LoadLoadout(std::string LoadoutName)
 
 		LoadoutConfigStateObject.Serialize(false, LoadoutJson);
 		LoadoutConfigStateObject.LoadoutName = LoadoutName;
+		LoadoutConfigStateObject.CurEq = 0;
 	}
 	//copy but I don't care.
 	return LoadoutConfigStateObject;
@@ -235,6 +236,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			Sleep(100);
 
 			bNoDraw = !bNoDraw;
+		}
+
+		if (GetAsyncKeyState(VK_F7))//Debug state key
+		{
+			//lazy
+			Sleep(100);
+
+			UserInterface::Get().DrawStateDebug(LoadoutConfigStateObject.GetCurrentEquipped());
+		}
+
+		if (GetAsyncKeyState(VK_F8))//Debug state key
+		{
+			//lazy
+			Sleep(100);
+
+			LoadoutConfigStateObject.GetCurrentEquipped().SetFullAmmo();
 		}
 
 		float CurrentZoom = 1.f;

@@ -1,4 +1,5 @@
 #include "Paint.h"
+#include "UserSettings.h"
 
 int Paint::Init(HWND hWND)
 {
@@ -95,6 +96,12 @@ void Paint::End()
 void Paint::Render(float CurrentCOF)
 {
 	//todo: add range gradiation system
+	auto& US = UserSettings::Get();
+	D3DCOLOR CrosshairColor = D3DCOLOR_COLORVALUE(US.CrosshairColor[0], US.CrosshairColor[1], US.CrosshairColor[2], US.CrosshairColor[3]);
+	
+	int PipLength = US.CrosshairShape[0];
+	int PipWidth = US.CrosshairShape[1];
+
 	DrawCrosshairs(CurrentCOF, PipLength, PipWidth, CrosshairColor);
 }
 

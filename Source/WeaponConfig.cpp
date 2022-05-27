@@ -32,12 +32,17 @@ void WeaponFireModeConfig::Serialize(bool bSerializing, nlohmann::json& Json)
 	JSON_SERIALIZE_VARIABLE(Json, bSerializing, ShotsPerBurst);
 	JSON_SERIALIZE_VARIABLE(Json, bSerializing, DelayBeforeFire);
 	JSON_SERIALIZE_VARIABLE(Json, bSerializing, bAllowsFireCancel);
+
+	JSON_SERIALIZE_OBJECT(Json, bSerializing, Standing);
+	JSON_SERIALIZE_OBJECT(Json, bSerializing, Crouching);
+	JSON_SERIALIZE_OBJECT(Json, bSerializing, StandingMove);
+	JSON_SERIALIZE_OBJECT(Json, bSerializing, CrouchingMove);
 }
 
 void WeaponFireGroupConfig::Serialize(bool bSerializing, nlohmann::json& Json)
 {
-	JSON_SERIALIZE_VARIABLE(Json, bSerializing, FireGroupName);
 	JSON_SERIALIZE_OBJECT_ARRAY(Json, bSerializing, FireModeConfigs, WeaponFireModeConfig);
+	JSON_SERIALIZE_VARIABLE(Json, bSerializing, FireModeSwitchTime);
 }
 
 void WeaponConfig::Serialize(bool bSerializing, nlohmann::json& Json)

@@ -2,18 +2,16 @@
 
 //Boost
 #include "boost/filesystem.hpp"
-#include "boost/array.hpp"
-#include "boost/shared_array.hpp"
 #include "../Ext/Json/json.hpp"
 
-//#include "boost/scoped_array.hpp"
+//Serialization helper macros.
 
 #define JSON_SERIALIZE_VARIABLE(JsonVariable, bIsSerializing, VariableName)	   \
 if (bIsSerializing)															   \
 {																			   \
 	JsonVariable[""#VariableName""] = VariableName;							   \
 }																			   \
-else																		   \
+else if (JsonVariable.contains(""#VariableName""))							   \
 {																			   \
 	VariableName = JsonVariable[""#VariableName""];							   \
 }
@@ -23,9 +21,9 @@ if (bIsSerializing)															   \
 {																			   \
 	nlohmann::json NewObject;												   \
 	VariableName.Serialize(bIsSerializing, NewObject);						   \
-	JsonVariable[""#VariableName""] = NewObject;							  \
+	JsonVariable[""#VariableName""] = NewObject;							   \
 }																			   \
-else																		   \
+else  if (JsonVariable.contains(""#VariableName""))							   \
 {																			   \
 	nlohmann::json InnerObject = JsonVariable[""#VariableName""];			   \
 	VariableName.Serialize(bIsSerializing, InnerObject);					   \
@@ -43,8 +41,9 @@ if (bIsSerializing)																			\
 	}																						\
 	JsonVariable[""#ArrayName""] = NewArray;												\
 }																							\
-else																						\
+else if (JsonVariable.contains(""#ArrayName""))												\
 {																							\
+	ArrayName.clear();																		\
 	auto& InnerArray = JsonVariable[""#ArrayName""];										\
 	for (auto& Elem : InnerArray)															\
 	{																						\
@@ -65,8 +64,9 @@ if (bIsSerializing)																	\
 	}																				\
 	JsonVariable[""#ArrayName""] = NewArray;										\
 }																					\
-else																				\
+else if (JsonVariable.contains(""#ArrayName""))										\
 {																					\
+	ArrayName.clear(); 																\
 	auto& InnerArray = JsonVariable[""#ArrayName""];								\
 	for (auto& Elem : InnerArray)													\
 	{																				\
@@ -74,6 +74,24 @@ else																				\
 	}																				\
 }
 
+#define JSON_SERIALIZE_CARRAY(JsonVariable, bIsSerializing, ArrayName, ObjectType)	\
+if (bIsSerializing)																	\
+{																					\
+	nlohmann::json NewArray = nlohmann::json::array({});						\
+	for (auto& Elem : ArrayName)													\
+	{																				\
+		NewArray.push_back(Elem);													\
+	}																				\
+	JsonVariable[""#ArrayName""] = NewArray;										\
+}																					\
+else if (JsonVariable.contains(""#ArrayName""))										\
+{																					\
+	auto& InnerArray = JsonVariable[""#ArrayName""];								\
+	for (int i = 0; i < ArrayName.size(); i++)										\
+	{																				\
+		ArrayName[i] = InnerArray[i];												\
+	}																				\
+}
 
 struct SerializerInterface
 {

@@ -122,8 +122,6 @@ struct WeaponFireModeConfig
 struct WeaponFireGroupConfig
 	: public SerializerInterface
 {
-	std::string FireGroupName;
-
 	std::vector<WeaponFireModeConfig> FireModeConfigs;
 
 	float FireModeSwitchTime;

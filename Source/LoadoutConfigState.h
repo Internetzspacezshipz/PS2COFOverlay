@@ -7,6 +7,9 @@
 #include "WeaponConfig.h"
 #include "MiscUtils.inl"
 
+//Boost incl
+#include "boost/shared_ptr.hpp"
+
 //Output of Ticking functions
 struct TickOutput
 {
@@ -41,6 +44,8 @@ struct WeaponConfigState
 	MiscUtils::Countdown<float> TimeToRecovery;//The amount of time until recovery starts. Usually zero, but is reset whenever lmb is held.
 	MiscUtils::Countdown<float> DelayBeforeFiring;//The amount of time until we can fire for weapons with delays before firing.
 	MiscUtils::Countdown<float> TimeToReload;//Amount of time until reload completed...
+
+	void SetFullAmmo() { CurrentBullets = Config->MagSize; };
 
 	//Outputs the current zoom level for adjustment of AngleToPixel calc
 	TickOutput Tick(
@@ -94,6 +99,31 @@ struct LoadoutConfigState
 	WeaponConfigState& GetWeaponConfigState(int Index, bool bIsSecondary)
 	{
 		return bIsSecondary ? WeaponConfigStates_Secondaries[Index] : WeaponConfigStates_Primaries[Index];
+	}
+
+	WeaponConfigState& GetCurrentEquipped()
+	{
+		return GetWeaponConfigState(CurEq, bIsSecondary);
+	}
+
+	template<typename Type>
+	void VisitWeaponConfigs(Type Visitor)
+	{
+		for (auto& Elem : WeaponConfigStates_Primaries)
+		{
+			if (!Visitor(Elem))
+			{
+				return;
+			}
+		}
+
+		for (auto& Elem : WeaponConfigStates_Secondaries)
+		{
+			if (!Visitor(Elem))
+			{
+				return;
+			}
+		}
 	}
 
 	virtual void Serialize(bool bSerializing, nlohmann::json& TargetJson) override;

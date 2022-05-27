@@ -1,5 +1,6 @@
 #include "LoadoutConfigState.h"
 #include "DataLoader.h"
+#include "UserSettings.h"
 
 
 TickOutput WeaponConfigState::Tick(
@@ -24,11 +25,15 @@ TickOutput WeaponConfigState::Tick(
 	TimeToNextFire.Tick(DeltaTime);
 	DelayBeforeFiring.Tick(DeltaTime);
 	TimeToReload.Tick(DeltaTime);
+	TimeToRecovery.Tick(DeltaTime);
+
+	if (UserSettings::Get().bInfiniteAmmo) { CurrentBullets = Config->MagSize; }
 
 	//Initiate reload.
 	if (bReloadPressed
 		&& CurrentBullets < Config->MagSize
-		&& ShotsLeftInBurst == 0)//Can only reload when not firing.
+		&& ShotsLeftInBurst == 0 //Can only reload when not firing.
+		&& TimeToReload.Completed())//Cannot reload when already reloading.
 	{
 		TimeToReload.Set(CurrentBullets ? Config->ReloadTimeShort : Config->ReloadTimeLong);
 		bIsReloading = true;
@@ -47,39 +52,31 @@ TickOutput WeaponConfigState::Tick(
 	if (!bIsReloading)
 	{
 		//Handle input wanting to fire/set up next burst/shot.
-		if ((bTryingToFire || DelayBeforeFiring.Completed())
+		if (bTryingToFire 
+			&& DelayBeforeFiring.Completed() 
+			&& (TimeToRecovery.Completed())
+			&& ShotsLeftInBurst == 0
 			&& CurrentBullets > 0)//If has bullets
 		{
-			//Reset recovery time.
-			TimeToRecovery.Set(CurrentConeConfig.RecoveryDelay);
-
 			//IF USING FULL AUTO
 			if (CurrentFireModeConfig.ShotsPerBurst == 0)
 			{
-				//Only add another shot if we don't have any queued
-				if (ShotsLeftInBurst == 0)
-				{
-					ShotsLeftInBurst = 1;
-				}
+				ShotsLeftInBurst = 1;
 			}
 			//IF USING BURST FIRE
 			else if (CurrentFireModeConfig.ShotsPerBurst > 0 && bHasUnlatched) //Was previously letting go of LMB
 			{
-				//if we're not currently firing a burst
-				if (ShotsLeftInBurst == 0)
+				//Latch so the player has to release MB1
+				bHasUnlatched = false;
+
+				//Yumi/Kuwa/other delay fire weapons
+				//If should delay.
+				if (CurrentFireModeConfig.DelayBeforeFire > 0.f)
 				{
-					//Latch so the player has to release MB1
-					bHasUnlatched = false;
-
-					//Yumi/Kuwa/other delay fire weapons
-					//If should delay.
-					if (CurrentFireModeConfig.DelayBeforeFire > 0.f)
-					{
-						DelayBeforeFiring.Set(CurrentFireModeConfig.DelayBeforeFire);
-					}
-
-					ShotsLeftInBurst = CurrentFireModeConfig.ShotsPerBurst;
+					DelayBeforeFiring.Set(CurrentFireModeConfig.DelayBeforeFire);
 				}
+
+				ShotsLeftInBurst = CurrentFireModeConfig.ShotsPerBurst;
 			}
 		}
 		else if (!bTryingToFire)
@@ -88,7 +85,6 @@ TickOutput WeaponConfigState::Tick(
 			//If we can allow an unlatch before firing, and we are no longer trying to fire.
 			if (CurrentFireModeConfig.bAllowsFireCancel)
 			{
-				DelayBeforeFiring.Set(0.f);
 				//Cancelling burst...
 				ShotsLeftInBurst = 0;
 			}
@@ -98,29 +94,31 @@ TickOutput WeaponConfigState::Tick(
 		if (ShotsLeftInBurst > 0
 			&& CurrentBullets > 0)
 		{
-			//Reset recovery timer if in process of firing.
-			TimeToRecovery.Set(CurrentConeConfig.RecoveryDelay);
-
 			//If we can fire
 			if (TimeToNextFire.Completed()
 				&& DelayBeforeFiring.Completed())
 			{
+				//Reset recovery timer if in process of firing.
+				TimeToRecovery.Set(CurrentConeConfig.RecoveryDelay);
+
 				//FIRE!!!!!!
 				CurrentCOF += CurrentConeConfig.Bloom;
 
-				--ShotsLeftInBurst;
-				--CurrentBullets;
+				ShotsLeftInBurst--;
+				CurrentBullets--;
 
 				//Reset timer for time to next fire.
-				TimeToNextFire.Set(1000. / CurrentFireModeConfig.ROF / 60.);
+				TimeToNextFire.Set(1.f/(CurrentFireModeConfig.ROF / 60.f));
 			}
 		}
 	}
 
 	//if haven't fired in a while...
-	if (TimeToRecovery.Completed()
-		&& (!bTryingToFire || CurrentBullets == 0)//Not trying to fire, or out of ammo.
-		&& 0 == ShotsLeftInBurst)
+	//Not trying to fire, or out of ammo.
+	if (((TimeToRecovery.Completed()
+		&& (ShotsLeftInBurst == 0 || DelayBeforeFiring.Completed()))
+		|| CurrentBullets == 0)
+		&& TimeToNextFire.Completed())
 	{
 		CurrentCOF -= CurrentConeConfig.RecoveryRate * DeltaTime;
 		//Minimum cone of fire
@@ -166,12 +164,19 @@ bool WeaponConfigState::LoadWeaponConfig()
 	}
 	Config->Serialize(false, WeaponJson);
 
+	//Start with full ammo
+	CurrentBullets = Config->MagSize;
+
 	return true;
 }
 
 void WeaponConfigState::Serialize(bool bSerializing, nlohmann::json& TargetJson)
 {
 	JSON_SERIALIZE_VARIABLE(TargetJson, bSerializing, WeaponName);
+	if (!bSerializing && WeaponName.size())
+	{
+		LoadWeaponConfig();
+	}
 }
 
 /* from WinUser.h L#532
@@ -230,13 +235,13 @@ bool IsCrouching()
 
 TickOutput LoadoutConfigState::Tick(float DeltaTime)
 {
+	MaybeSwitchWeapon();
+
 	if (WeaponConfigStates_Primaries.size() == 0 || CurEq == -1)// if -1, that means no weapon is equipped.
 	{
 		//Not yet initialized.
 		return TickOutput{ 1.f, 0.f };
 	}
-
-	MaybeSwitchWeapon();
 
 	TimeBeforeFrom.Tick(DeltaTime);
 	if (TimeBeforeFrom.Completed())
@@ -244,7 +249,7 @@ TickOutput LoadoutConfigState::Tick(float DeltaTime)
 		TimeBeforeTo.Tick(DeltaTime);
 	}
 
-	std::vector<WeaponConfigState>& CurrentArray = bIsSecondary ? WeaponConfigStates_Primaries : WeaponConfigStates_Secondaries;
+	std::vector<WeaponConfigState>& CurrentArray = bIsSecondary ? WeaponConfigStates_Secondaries : WeaponConfigStates_Primaries ;
 
 	WeaponConfigState& CurWeaponState = CurrentArray[CurEq];
 
