@@ -1,1 +1,1 @@
-{"CrosshairColor":[1.0,0.0,0.0,1.0],"CrosshairShape":[1.0,10.0],"FOV":74.0,"FontSize":0.8999999761581421,"bInfiniteAmmo":true,"bToggleADS":false,"bToggleCrouch":false}
+{"CrosshairColor":[1.0,0.0,0.0,1.0],"CrosshairShape":[15.0,2.0],"FOV":74.0,"FontSize":0.8999999761581421,"Keycode_Deactivate":117,"Keycode_Open":114,"Keycode_Quit":113,"Playcode_Aim":[2],"Playcode_Crouch":[67,99],"Playcode_Fire":[1],"Playcode_Move":[65,97,68,100,83,115,87,119],"Playcode_Reload":[82,114],"bInfiniteAmmo":true,"bToggleADS":false,"bToggleCrouch":false}

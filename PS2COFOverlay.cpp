@@ -104,7 +104,7 @@ void InitGUI(D3DDeviceType* Device, HWND* TargetHWND)
 	ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\Arial.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
 }
 
-void LoadUserSettings()
+UserSettings& LoadUserSettings()
 {
 	UserSettings& UserSettingsObject = UserSettings::Get();
 	DataLoader& DataLoaderObject = DataLoader::Get();
@@ -122,6 +122,7 @@ void LoadUserSettings()
 	}
 
 	UserSettingsObject.Serialize(false, UserSettingsJson);
+	return UserSettingsObject;
 }
 
 LoadoutConfigState LoadLoadout(std::string LoadoutName)
@@ -190,7 +191,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 
 	//Load user settings.
-	LoadUserSettings();
+	UserSettings& Settings = LoadUserSettings();
 
 	const std::string BaseLoadoutName = "BaseLoadout";
 
@@ -206,7 +207,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		const float DeltaTime = ((float)(Now - LastTick)) / CLOCKS_PER_SEC;
 		LastTick = Now;
 
-		if (GetAsyncKeyState(VK_F3))//open menu
+		if (GetAsyncKeyState(Settings.Keycode_Open))//open menu
 		{
 			bool bMenuOpen = UserInterface::Get().ToggleMenuOpen();
 			//lazy
@@ -225,12 +226,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			}
 		}
 
-		if (GetAsyncKeyState(VK_F2))//quit key
+		if (GetAsyncKeyState(Settings.Keycode_Quit))//quit key
 		{
 			break;
 		}
 
-		if (GetAsyncKeyState(VK_F6))//no draw key
+		if (GetAsyncKeyState(Settings.Keycode_Deactivate))//no draw key
 		{
 			//lazy
 			Sleep(100);

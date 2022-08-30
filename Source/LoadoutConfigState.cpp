@@ -16,6 +16,9 @@ TickOutput WeaponConfigState::Tick(
 		return TickOutput{ 1.f, 0.f };
 	}
 
+	//User settings
+	UserSettings& US = UserSettings::Get();
+
 	//Get configuration
 	const WeaponFireGroupConfig& CurrentFireGroupConfig = Config->GetFireGroupConfig(CurrentFireGroup);
 	const WeaponFireModeConfig& CurrentFireModeConfig = CurrentFireGroupConfig.GetFireModeConfig(bIsADSed);
@@ -27,7 +30,7 @@ TickOutput WeaponConfigState::Tick(
 	TimeToReload.Tick(DeltaTime);
 	TimeToRecovery.Tick(DeltaTime);
 
-	if (UserSettings::Get().bInfiniteAmmo) { CurrentBullets = Config->MagSize; }
+	if (US.bInfiniteAmmo) { CurrentBullets = Config->MagSize; }
 
 	//Initiate reload.
 	if (bReloadPressed
@@ -187,29 +190,7 @@ void WeaponConfigState::Serialize(bool bSerializing, nlohmann::json& TargetJson)
 
 bool IsMoving()
 {
-	short MovingKeys[8]
-	{
-		0x41,//A
-		0x61,//a
-
-		0x44,//D
-		0x64,//d
-
-		0x53,//S
-		0x73,//s
-
-		0x57,//W
-		0x77,//w
-	};
-
-	for (short i = 0; i < 8; i++)
-	{
-		if (GetAsyncKeyState(MovingKeys[i]))
-		{
-			return true;
-		}
-	}
-	return false;
+	return AnyKeyPressed(UserSettings::Get().Playcode_Move);
 }
 
 bool bCurrentlyCrouched = false;
@@ -221,8 +202,10 @@ bool IsCrouching()
 	//C = 0x43
 	//c = 0x63
 
-	bool bCPressed = GetAsyncKeyState(0x43) || GetAsyncKeyState(0x63);
-	//if (bToggleCrouch)
+	UserSettings& US = UserSettings::Get();
+	bool bCPressed = AnyKeyPressed(US.Playcode_Move);
+
+	if (US.bToggleCrouch)
 	{
 		if (bLastCrouchPressed != bCPressed)
 		{
@@ -242,6 +225,8 @@ TickOutput LoadoutConfigState::Tick(float DeltaTime)
 		//Not yet initialized.
 		return TickOutput{ 1.f, 0.f };
 	}
+
+	UserSettings& US = UserSettings::Get();
 
 	TimeBeforeFrom.Tick(DeltaTime);
 	if (TimeBeforeFrom.Completed())
@@ -265,9 +250,9 @@ TickOutput LoadoutConfigState::Tick(float DeltaTime)
 	else
 	{
 		//These actions are only allowed while not switching
-		const bool bFiring = GetAsyncKeyState(0x01);//LMB
-		const bool bIsADSed = GetAsyncKeyState(0x02);//RMB
-		const bool bIsReloadPressed = GetAsyncKeyState(0x52) || GetAsyncKeyState(0x72); //R/r
+		const bool bFiring = AnyKeyPressed(US.Playcode_Fire);
+		const bool bIsADSed = AnyKeyPressed(US.Playcode_Aim);
+		const bool bIsReloadPressed = AnyKeyPressed(US.Playcode_Reload);
 
 		return CurWeaponState.Tick(DeltaTime, bFiring, bMoving, bIsCrouched, bIsADSed, bIsReloadPressed);
 	}

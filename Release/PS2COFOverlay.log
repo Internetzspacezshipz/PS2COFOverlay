@@ -1,5 +1,40 @@
-﻿  Generating code
-  Previous IPDB and IOBJ mismatch, fall back to full compilation.
-  All 3550 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+﻿  PS2COFOverlay.cpp
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserSettings.h(13,22): warning C4018: '<': signed/unsigned mismatch
+  LoadoutConfigState.cpp
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserSettings.h(13,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\LoadoutConfigState.cpp(322,45): warning C4018: '>': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\LoadoutConfigState.cpp(331,47): warning C4018: '>': signed/unsigned mismatch
+  Paint.cpp
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserSettings.h(13,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(55,43): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(55,39): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(55,65): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(55,59): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(56,17): warning C4244: 'argument': conversion from 'int' to 'FLOAT', possible loss of data
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(102,16): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(103,15): warning C4244: 'initializing': conversion from 'T' to 'int', possible loss of data
+          with
+          [
+              T=float
+          ]
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\Paint.cpp(105,17): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+  UserInterface.cpp
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserSettings.h(13,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserInterface.cpp(57,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserInterface.cpp(66,10): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserInterface.cpp(147,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserInterface.cpp(180,21): warning C4018: '<': signed/unsigned mismatch
+  UserSettings.cpp
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserSettings.h(13,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserSettings.cpp(23,2): warning C4018: '<': signed/unsigned mismatch
+C:\Users\ColRem\source\repos\PS2COFOverlay\PS2COFOverlay\Source\UserSettings.cpp(24,2): warning C4018: '<': signed/unsigned mismatch
+  Generating code
+  1 of 3584 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    30 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   PS2COFOverlay.vcxproj -> C:\Users\ColRem\source\repos\PS2COFOverlay\Release\PS2COFOverlay.exe

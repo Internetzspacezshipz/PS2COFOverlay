@@ -18,6 +18,10 @@
 
 
 #define USING_D3DEX 1
+#define DX_VER 9
+
+
+
 
 #if USING_D3DEX
 //Typedefs to allow easier switching of type.
@@ -28,6 +32,9 @@ typedef IDirect3DDevice9Ex D3DDeviceType;
 typedef IDirect3D9 D3DType;
 typedef IDirect3DDevice9 D3DDeviceType;
 #endif
+
+
+
 
 class Paint
 {

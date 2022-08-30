@@ -273,6 +273,11 @@ void UserInterface::DrawUserSettings()
 
 		ImGui::Checkbox("InfiniteAmmo", &US.bInfiniteAmmo);
 
+		if (ImGui::Button("Reset Settings"))
+		{
+			US.Reset();
+		}
+
 		ImGui::TreePop();
 	}
 }
